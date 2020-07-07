@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	acc "github.com/openfaas-incubator/faas-federation/testing"
+	acc "github.com/PEng2020-Subject3/faas-policy-provider/testing"
 	types "github.com/openfaas/faas-provider/types"
 )
 

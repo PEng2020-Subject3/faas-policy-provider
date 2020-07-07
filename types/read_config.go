@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -81,18 +80,12 @@ func (r ReadConfig) Read(hasEnv HasEnv) BootstrapConfig {
 	cfg.WriteTimeout = parseIntOrDurationValue(hasEnv.Getenv("write_timeout"), time.Minute*3)
 	cfg.Port = parseIntValue(hasEnv.Getenv("port"), defaultTCPPort)
 
-	providers := strings.Split(os.Getenv("providers"), ",")
-	for i, v := range providers {
-		providers[i] = strings.Trim(v, " ")
-	}
-
-	cfg.Providers = providers
-	cfg.DefaultProvider = os.Getenv("default_provider")
+	cfg.DefaultProvider = os.Getenv("provider")
 	return cfg
 }
 
 func (r ReadConfig) ensureRequired() {
-	var required = []string{"providers", "default_provider"}
+	var required = []string{"provider"}
 
 	for _, v := range required {
 		if _, ok := os.LookupEnv(v); !ok {
@@ -106,6 +99,5 @@ type BootstrapConfig struct {
 	Port            int
 	ReadTimeout     time.Duration
 	WriteTimeout    time.Duration
-	Providers       []string
 	DefaultProvider string
 }

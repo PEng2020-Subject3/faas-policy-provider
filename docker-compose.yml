@@ -8,7 +8,7 @@ services:
     networks:
       - federation
     environment:
-      functions_provider_url: "http://faas-federation:8080/"
+      functions_provider_url: "http://faas-policy:8080/"
       read_timeout: "5m5s" # Maximum time to read HTTP request
       write_timeout: "5m5s" # Maximum time to write HTTP response
       upstream_timeout: "5m" # Maximum duration of upstream function call - should be more than read_timeout and write_timeout
@@ -37,15 +37,14 @@ services:
         constraints:
           - "node.platform.os == linux"
 
-  faas-federation:
+  faas-policy:
     ports:
       - 8081:8080
-    image: openfaas/faas-federation:latest
+    image: gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:latest
     networks:
       - federation
     environment:
-      providers: "http://faas-provider-a:8080,http://faas-provider-b:8080"
-      default_provider: "http://faas-provider-a:8080"
+      provider: "http://faas-provider:8080"
       read_timeout: "5m5s" # set both here, and on your functions
       write_timeout: "5m5s" # set both here, and on your functions
     deploy:
@@ -64,34 +63,9 @@ services:
         max_attempts: 20
         window: 380s
 
-  faas-provider-a:
+  faas-provider:
     ports:
       - 8082:8080
-    image: openfaas/faas-inmemory:latest
-    networks:
-      - federation
-    environment:
-      read_timeout: "5m5s" # set both here, and on your functions
-      write_timeout: "5m5s" # set both here, and on your functions
-    deploy:
-      placement:
-        constraints:
-          - "node.role == manager"
-          - "node.platform.os == linux"
-      resources:
-        # limits:   # Enable if you want to limit memory usage
-        #     memory: 100M
-        reservations:
-          memory: 100M
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 20
-        window: 380s
-
-  faas-provider-b:
-    ports:
-      - 8083:8080
     image: openfaas/faas-inmemory:latest
     networks:
       - federation

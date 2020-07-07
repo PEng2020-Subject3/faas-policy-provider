@@ -24,24 +24,13 @@ type ProviderLookup interface {
 
 type defaultProviderRouting struct {
 	cache           map[string]*types.FunctionDeployment
-	providers       map[string]*url.URL
 	defaultProvider *url.URL
 	lock            sync.RWMutex
 }
 
 // NewDefaultProviderRouting creates a default way to resolve providers currently based
 // on name constraint
-func NewDefaultProviderRouting(providers []string, defaultProvider string) (ProviderLookup, error) {
-	providerMap := map[string]*url.URL{}
-
-	for _, v := range providers {
-		pURL, err := url.Parse(v)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing URL using value %s. %v", v, err)
-		}
-		providerMap[getHostNameWithoutPorts(pURL)] = pURL
-	}
-
+func NewDefaultProviderRouting(defaultProvider string) (ProviderLookup, error) {
 	d, err := url.Parse(defaultProvider)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing default provider URL using value %s. %v", defaultProvider, err)
@@ -49,7 +38,6 @@ func NewDefaultProviderRouting(providers []string, defaultProvider string) (Prov
 
 	return &defaultProviderRouting{
 		cache:           make(map[string]*types.FunctionDeployment),
-		providers:       providerMap,
 		defaultProvider: d,
 	}, nil
 }
@@ -57,9 +45,6 @@ func NewDefaultProviderRouting(providers []string, defaultProvider string) (Prov
 func (d *defaultProviderRouting) ReloadCache() error {
 	log.Info("reloading cache starting...")
 	var urls []string
-	for _, v := range d.providers {
-		urls = append(urls, v.String())
-	}
 
 	result, err := ReadServices(urls)
 	if err != nil {

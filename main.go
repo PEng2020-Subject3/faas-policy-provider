@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/openfaas-incubator/faas-federation/handlers"
-	"github.com/openfaas-incubator/faas-federation/routing"
-	"github.com/openfaas-incubator/faas-federation/types"
-	"github.com/openfaas-incubator/faas-federation/version"
+	"github.com/PEng2020-Subject3/faas-policy-provider/handlers"
+	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
+	"github.com/PEng2020-Subject3/faas-policy-provider/types"
+	"github.com/PEng2020-Subject3/faas-policy-provider/version"
 	bootstrap "github.com/openfaas/faas-provider"
 	"github.com/openfaas/faas-provider/proxy"
 
@@ -40,13 +40,13 @@ func init() {
 
 func main() {
 
-	log.Infof("faas-federation version: %s. Last commit message: %s, commit SHA: %s", version.BuildVersion(), version.GitCommitMessage, version.GitCommitSHA)
+	log.Infof("faas-policy-provider version: %s. Last commit message: %s, commit SHA: %s", version.BuildVersion(), version.GitCommitMessage, version.GitCommitSHA)
 
 	readConfig := types.ReadConfig{}
 	osEnv := types.OsEnv{}
 	cfg := readConfig.Read(osEnv)
 
-	providerLookup, err := routing.NewDefaultProviderRouting(cfg.Providers, cfg.DefaultProvider)
+	providerLookup, err := routing.NewDefaultProviderRouting(cfg.DefaultProvider)
 	if err != nil {
 		panic(fmt.Errorf("could not create provider lookup, error: %v", err))
 	}

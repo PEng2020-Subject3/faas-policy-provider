@@ -1,0 +1,22 @@
+# github.com/gorilla/mux v1.7.1
+## explicit
+github.com/gorilla/mux
+# github.com/konsorten/go-windows-terminal-sequences v1.0.2
+## explicit
+github.com/konsorten/go-windows-terminal-sequences
+# github.com/openfaas/faas v0.0.0-20200422142642-18f6c720b50d
+## explicit
+github.com/openfaas/faas/gateway/requests
+# github.com/openfaas/faas-provider v0.15.1
+## explicit
+github.com/openfaas/faas-provider
+github.com/openfaas/faas-provider/auth
+github.com/openfaas/faas-provider/httputil
+github.com/openfaas/faas-provider/proxy
+github.com/openfaas/faas-provider/types
+# github.com/sirupsen/logrus v1.4.1
+## explicit
+github.com/sirupsen/logrus
+# golang.org/x/sys v0.0.0-20190502175342-a43fa875dd82
+## explicit
+golang.org/x/sys/unix

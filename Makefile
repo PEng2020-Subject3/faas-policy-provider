@@ -15,24 +15,24 @@ testacc: goimportscheck
 
 .PHONY: build
 build:
-	docker build -t openfaas/faas-federation:$(TAG) . --squash=${SQUASH}
+	docker build -t gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:$(TAG) . --squash=${SQUASH}
 
 .PHONY: build-local
 build-local:
 	go build --ldflags "-s -w \
-        -X github.com/openfaas-incubator/faas-federation/version.GitCommitSHA=${GIT_COMMIT_SHA} \
-        -X \"github.com/openfaas-incubator/faas-federation/version.GitCommitMessage=${GIT_COMMIT_MESSAGE}\" \
-        -X github.com/openfaas-incubator/faas-federation/version.Version=${VERSION}" \
-        -o faas-federation .
+        -X github.com/PEng2020-Subject3/faas-policy-provider/version.GitCommitSHA=${GIT_COMMIT_SHA} \
+        -X \"github.com/PEng2020-Subject3/faas-policy-provider/version.GitCommitMessage=${GIT_COMMIT_MESSAGE}\" \
+        -X github.com/PEng2020-Subject3/faas-policy-provider/version.Version=${VERSION}" \
+        -o faas-policy-provider .
 
 .PHONY: up-local
 up: build
-	docker stack deploy federation --compose-file ./docker-compose.yml
+	docker stack deploy policy-provider --compose-file ./docker-compose.yml
 
 .PHONY: push
 push:
-	docker tag openfaas/faas-federation:latest openfaas/faas-federation:${VERSION}
-	docker push openfaas/faas-federation:${VERSION}
+	docker tag gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:latest gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:${VERSION}
+	docker push gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:${VERSION}
 
 .PHONY: release
 release:

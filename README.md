@@ -1,33 +1,19 @@
-faas-federation
+faas-policy-provider
 -----
 
-faas-federation is an implementation of the [faas-provider](https://github.com/openfaas/faas-provider) which can be used to unify one or more OpenFaaS clusters under a single API.
+faas-policy-provider is an implementation of the [faas-provider](https://github.com/openfaas/faas-provider) 
+which can be used enforce location and other policy constraints on function execution.  
+Similar to [faas-federation](https://github.com/openfaas-incubator/faas-federation) this provider is set in front of an
+actual provider.
 
 ## Why do we need this?
 
-This project exists to join together two or more distinct OpenFaaS clusters.
-
-* Multi-region - east/west
-
-Get a single API / control-plane for one or more clusters split by location, such as east/west.
-
-* Edge locations
-
-You may have one or more edge locations (or even ARM/IoT OpenFaaS installations). You can join them together under a single set of credentials and control plane.
-
-* Varying provider types
-
-You can connect two or more different OpenFaaS provider types together. For instance: Kubernetes (faas-netes) and Lambda (faas-lambda). This means you can have a single, centralized control-plane but deploy to both AWS Lambda and Kubernetes at the same time.
 
 ## Getting started
 
 `faas-federation` can replace your provider in your existing OpenFaaS deployment.
 
 More coming soon.
-
-### Example
-
-Coming soon: deploy OpenFaaS with two separate [`faas-memory`](https://github.com/openfaas-incubator/faas-memory) providers.
 
 ### helm chart
 
@@ -52,7 +38,7 @@ All configuration is managed using environment variables
 
 ## Acknowledgements
 
-Idea by Alex Ellis and Edward Wilde.
+Source forked from `faas-federation`.  
 
 ## License
 

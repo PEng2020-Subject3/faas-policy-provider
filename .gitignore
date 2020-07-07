@@ -2,4 +2,6 @@
 .vscode
 examples/
 dist
-faas-federation
+
+.DS_Store
+*.iml

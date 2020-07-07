@@ -24,7 +24,7 @@ func MakeInfoHandler(version, sha string) http.HandlerFunc {
 
 		log.Info("info request")
 
-		infoRequest := types.InfoRequest{
+		infoRequest := types.InfoResponse{
 			Orchestration: OrchestrationIdentifier,
 			Provider:      ProviderName,
 			Version: types.ProviderVersion{
