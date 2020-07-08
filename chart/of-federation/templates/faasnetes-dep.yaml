@@ -1,5 +1,5 @@
 {{- $functionNs := default .Release.Namespace .Values.functionNamespace }}
-apiVersion: apps/v1beta1 # for versions before 1.6.0 use extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -23,34 +23,26 @@ spec:
       serviceAccountName: {{ .Release.Name }}-controller
       {{- end }}
       volumes:
+      - name: faas-netes-temp-volume
+        emptyDir: {}
+      {{- if .Values.basic_auth }}
+      - name: auth
+        secret:
+          secretName: basic-auth
+      {{- end }}
       containers:
       {{- if .Values.operator.create }}
       - name: operator
+        resources:
+        {{- .Values.operator.resources | toYaml | nindent 12 }}
         image: {{ .Values.operator.image }}
         imagePullPolicy: {{ .Values.openfaasImagePullPolicy }}
         command:
-          - ./openfaas-operator
-          - -logtostderr
-          - -v=2
-        env:
-          - name: function_namespace
-            value: {{ $functionNs | quote }}
-          - name: read_timeout
-            value: "{{ .Values.faasnetes.readTimeout }}"
-          - name: write_timeout
-            value: "{{ .Values.faasnetes.writeTimeout }}"
-          - name: image_pull_policy
-            value: {{ .Values.faasnetes.imagePullPolicy | quote }}
-        ports:
-          - containerPort: 8081
-            protocol: TCP
-      {{- else }}
-      - name: faas-netes
-        image: {{ .Values.faasnetes.image }}
-        imagePullPolicy: {{ .Values.openfaasImagePullPolicy }}
+          - ./faas-netes
+          - -operator=true
         env:
           - name: port
-            value: "8080"
+            value: "8081"
           - name: function_namespace
             value: {{ $functionNs | quote }}
           - name: read_timeout
@@ -61,6 +53,8 @@ spec:
             value: {{ .Values.faasnetes.imagePullPolicy | quote }}
           - name: http_probe
             value: "{{ .Values.faasnetes.httpProbe }}"
+          - name: set_nonroot_user
+            value: "{{ .Values.faasnetes.setNonRootUser }}"
           - name: readiness_probe_initial_delay_seconds
             value: "{{ .Values.faasnetes.readinessProbe.initialDelaySeconds }}"
           - name: readiness_probe_timeout_seconds
@@ -74,18 +68,62 @@ spec:
           - name: liveness_probe_period_seconds
             value: "{{ .Values.faasnetes.livenessProbe.periodSeconds }}"
         ports:
+          - containerPort: 8081
+            protocol: TCP
+      {{- else }}
+      - name: faas-netes
+        resources:
+        {{- .Values.faasnetes.resources | toYaml | nindent 12 }}
+        image: {{ .Values.faasnetes.image }}
+        imagePullPolicy: {{ .Values.openfaasImagePullPolicy }}
+        {{- if .Values.securityContext }}
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsUser: 10001
+        {{- end }}
+        env:
+          - name: port
+            value: "8080"
+          - name: function_namespace
+            value: {{ $functionNs | quote }}
+          - name: read_timeout
+            value: "{{ .Values.faasnetes.readTimeout }}"
+          - name: write_timeout
+            value: "{{ .Values.faasnetes.writeTimeout }}"
+          - name: image_pull_policy
+            value: {{ .Values.faasnetes.imagePullPolicy | quote }}
+          - name: http_probe
+            value: "{{ .Values.faasnetes.httpProbe }}"
+          - name: set_nonroot_user
+            value: "{{ .Values.faasnetes.setNonRootUser }}"
+          - name: readiness_probe_initial_delay_seconds
+            value: "{{ .Values.faasnetes.readinessProbe.initialDelaySeconds }}"
+          - name: readiness_probe_timeout_seconds
+            value: "{{ .Values.faasnetes.readinessProbe.timeoutSeconds }}"
+          - name: readiness_probe_period_seconds
+            value: "{{ .Values.faasnetes.readinessProbe.periodSeconds }}"
+          - name: liveness_probe_initial_delay_seconds
+            value: "{{ .Values.faasnetes.livenessProbe.initialDelaySeconds }}"
+          - name: liveness_probe_timeout_seconds
+            value: "{{ .Values.faasnetes.livenessProbe.timeoutSeconds }}"
+          - name: liveness_probe_period_seconds
+            value: "{{ .Values.faasnetes.livenessProbe.periodSeconds }}"
+        volumeMounts:
+          - mountPath: /tmp
+            name: faas-netes-temp-volume
+        ports:
           - containerPort: 8080
             protocol: TCP
       {{- end }}
     {{- with .Values.nodeSelector }}
-    nodeSelector:
-  {{ toYaml . | indent 8 }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
   {{- end }}
   {{- with .Values.affinity }}
-affinity:
-  {{ toYaml . | indent 8 }}
+      affinity:
+{{ toYaml . | indent 8 }}
   {{- end }}
   {{- with .Values.tolerations }}
-tolerations:
-  {{ toYaml . | indent 8 }}
+      tolerations:
+{{ toYaml . | indent 8 }}
   {{- end }}

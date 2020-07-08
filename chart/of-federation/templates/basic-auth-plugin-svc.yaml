@@ -1,20 +1,25 @@
+{{- $functionNs := default .Release.Namespace .Values.functionNamespace }}
+{{- if .Values.basic_auth }}
+---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app: {{ template "openfaas.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    component: gateway
+    component: basic-auth-plugin
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
-  name: gateway
+  name: basic-auth-plugin
   namespace: {{ .Release.Namespace | quote }}
 spec:
   type: ClusterIP
   ports:
-    - name: http
-      port: 8080
+    - port: 8080
       targetPort: http
       protocol: TCP
+      name: http
   selector:
-    app: gateway
+    app: basic-auth-plugin
+
+{{- end }}
