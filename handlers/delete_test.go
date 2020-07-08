@@ -11,6 +11,7 @@ import (
 	acc "github.com/PEng2020-Subject3/faas-policy-provider/testing"
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/proxy"
+	"github.com/openfaas/faas-provider/types"
 )
 
 // Test_Delete requires `make up` and `cd examples && faas-cli up`
@@ -34,7 +35,8 @@ func Test_Delete(t *testing.T) {
 		t.Fatalf("error reloading provider cache. %v", err)
 	}
 
-	proxyFunc := proxy.NewHandlerFunc(time.Minute*1, NewFunctionLookup(providerLookup))
+	config := types.FaaSConfig{ReadTimeout: time.Minute * 1}
+	proxyFunc := proxy.NewHandlerFunc(config, NewFunctionLookup(providerLookup))
 
 	MakeDeleteHandler(proxyFunc).ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {

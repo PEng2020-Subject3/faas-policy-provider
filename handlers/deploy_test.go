@@ -11,6 +11,7 @@ import (
 	acc "github.com/PEng2020-Subject3/faas-policy-provider/testing"
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/proxy"
+	"github.com/openfaas/faas-provider/types"
 )
 
 func Test_Deploy(t *testing.T) {
@@ -28,7 +29,8 @@ func Test_Deploy(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	proxyFunc := proxy.NewHandlerFunc(time.Minute*1, NewFunctionLookup(providerLookup))
+	config := types.FaaSConfig{ReadTimeout: time.Minute * 1}
+	proxyFunc := proxy.NewHandlerFunc(config, NewFunctionLookup(providerLookup))
 
 	MakeDeployHandler(proxyFunc, providerLookup).ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
