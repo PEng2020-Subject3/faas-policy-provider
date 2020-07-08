@@ -12,7 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/openfaas-incubator/faas-federation/routing"
+	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -31,6 +31,7 @@ func MakeProxyHandler(proxy http.HandlerFunc) http.HandlerFunc {
 		}
 
 		functionName := strings.Split(r.URL.Path, "/")[2]
+		// todo work with the name here
 		pathVars["name"] = functionName
 		pathVars["params"] = r.URL.Path
 		proxy.ServeHTTP(w, r)

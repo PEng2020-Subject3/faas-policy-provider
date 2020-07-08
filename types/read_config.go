@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	ftypes "github.com/openfaas/faas-provider/types"
 )
 
 // OsEnv implements interface to wrap os.Getenv
@@ -71,11 +73,18 @@ func parseString(val string, fallback string) string {
 }
 
 // Read fetches config from environmental variables.
-func (r ReadConfig) Read(hasEnv HasEnv) BootstrapConfig {
+func (r ReadConfig) Read(hasEnv HasEnv) (BootstrapConfig, error) {
 	r.ensureRequired()
 	defaultTCPPort := 8080
 
 	cfg := BootstrapConfig{}
+
+	faasConfig, err := ftypes.ReadConfig{}.Read(hasEnv)
+	if err != nil {
+		return cfg, err
+	}
+
+	cfg.FaaSConfig = *faasConfig
 
 	cfg.ReadTimeout = parseIntOrDurationValue(hasEnv.Getenv("read_timeout"), time.Minute*3)
 	cfg.WriteTimeout = parseIntOrDurationValue(hasEnv.Getenv("write_timeout"), time.Minute*3)
@@ -88,7 +97,7 @@ func (r ReadConfig) Read(hasEnv HasEnv) BootstrapConfig {
 
 	cfg.Providers = providers
 	cfg.DefaultProvider = os.Getenv("default_provider")
-	return cfg
+	return cfg, nil
 }
 
 func (r ReadConfig) ensureRequired() {
@@ -108,4 +117,5 @@ type BootstrapConfig struct {
 	WriteTimeout    time.Duration
 	Providers       []string
 	DefaultProvider string
+	FaaSConfig      ftypes.FaaSConfig
 }

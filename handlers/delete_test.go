@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
+	acc "github.com/PEng2020-Subject3/faas-policy-provider/testing"
 	"github.com/gorilla/mux"
-	"github.com/openfaas-incubator/faas-federation/routing"
-	acc "github.com/openfaas-incubator/faas-federation/testing"
 	"github.com/openfaas/faas-provider/proxy"
 )
 

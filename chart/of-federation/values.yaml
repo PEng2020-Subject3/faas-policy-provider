@@ -40,7 +40,7 @@ faasfederation:
     initialDelaySeconds: 3
     timeoutSeconds: 1
     periodSeconds: 10
-  providers: "http://faasnetes.openfaas:8080,http://faaslambda.openfaas:8080"
+  providers: "http://faasnetes.openfaas:8080"
   default_provider: "http://faasnetes.openfaas:8080"
 
 faaslambda:

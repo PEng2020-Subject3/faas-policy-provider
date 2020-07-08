@@ -3,3 +3,7 @@
 examples/
 dist
 faas-federation
+faas-policy-provider
+
+.DS_Store
+*.iml

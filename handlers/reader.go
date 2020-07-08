@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/openfaas-incubator/faas-federation/routing"
+	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
 
 	types "github.com/openfaas/faas-provider/types"
 	log "github.com/sirupsen/logrus"

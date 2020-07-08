@@ -40,11 +40,11 @@ services:
   faas-federation:
     ports:
       - 8081:8080
-    image: openfaas/faas-federation:latest
+    image: gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:latest
     networks:
       - federation
     environment:
-      providers: "http://faas-provider-a:8080,http://faas-provider-b:8080"
+      providers: "http://faas-provider-a:8080"
       default_provider: "http://faas-provider-a:8080"
       read_timeout: "5m5s" # set both here, and on your functions
       write_timeout: "5m5s" # set both here, and on your functions
@@ -67,31 +67,6 @@ services:
   faas-provider-a:
     ports:
       - 8082:8080
-    image: openfaas/faas-inmemory:latest
-    networks:
-      - federation
-    environment:
-      read_timeout: "5m5s" # set both here, and on your functions
-      write_timeout: "5m5s" # set both here, and on your functions
-    deploy:
-      placement:
-        constraints:
-          - "node.role == manager"
-          - "node.platform.os == linux"
-      resources:
-        # limits:   # Enable if you want to limit memory usage
-        #     memory: 100M
-        reservations:
-          memory: 100M
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 20
-        window: 380s
-
-  faas-provider-b:
-    ports:
-      - 8083:8080
     image: openfaas/faas-inmemory:latest
     networks:
       - federation

@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/openfaas-incubator/faas-federation/routing"
+	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
 
 	log "github.com/sirupsen/logrus"
 )
