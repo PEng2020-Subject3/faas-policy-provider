@@ -43,7 +43,7 @@ faasnetes:
       cpu: "50m"
 
 faasfederation:
-  image: gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:0.1.1
+  image: gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:latest
   replicas: 1
   readTimeout : "60s"
   writeTimeout : "60s"
@@ -92,7 +92,7 @@ gateway:
   nodePort: 31112
   maxIdleConns: 1024
   maxIdleConnsPerHost: 1024
-  directFunctions: true
+  directFunctions: false
   # Custom logs provider url. For example openfaas-loki would be
   # "http://ofloki-openfaas-loki.openfaas:9191/"
   logsProviderURL: ""
