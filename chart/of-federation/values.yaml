@@ -1,37 +1,54 @@
-functionNamespace:
+functionNamespace: openfaas-fn  # Default namespace for functions
 
 async: true
 
 exposeServices: true
 serviceType: NodePort
+httpProbe: true               # Setting to true will use HTTP for readiness and liveness probe on the OpenFaaS system Pods (incompatible with Istio < 1.1.5)
 rbac: true
+clusterRole: false            # Set to true to have OpenFaaS administrate multiple namespaces
+
+# create pod security policies for OpenFaaS control plane
+# https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+psp: false
 securityContext: true
-basic_auth: false
+basic_auth: true
+generateBasicAuth: false
 http_signatures: false
 
+# image pull policy for openfaas components, can change to `IfNotPresent` in offline env
+openfaasImagePullPolicy: "Always"
+
+gatewayExternal:
+  annotations: {}
+
 faasnetes:
-  image: openfaas/faas-netes:0.7.1
+  image: openfaas/faas-netes:0.10.5
   replicas: 1
   readTimeout : "60s"
   writeTimeout : "60s"
   imagePullPolicy : "Always"    # Image pull policy for deployed functions
-  httpProbe: false              # Setting to true will use a lock file for readiness and liveness (incompatible with Istio)
+  httpProbe: true              # Setting to true will use a lock file for readiness and liveness (incompatible with Istio)
   readinessProbe:
-    initialDelaySeconds: 0
+    initialDelaySeconds: 2
     timeoutSeconds: 1           # Tuned-in to run checks early and quickly to support fast cold-start from zero replicas
-    periodSeconds: 1
+    periodSeconds: 2
   livenessProbe:
     initialDelaySeconds: 3
     timeoutSeconds: 1
     periodSeconds: 10
+  resources:
+    requests:
+      memory: "120Mi"
+      cpu: "50m"
 
 faasfederation:
-  image: openfaas/faas-federation:0.1
+  image: gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:0.1
   replicas: 1
   readTimeout : "60s"
   writeTimeout : "60s"
   imagePullPolicy : "Always"    # Image pull policy for deployed functions
-  httpProbe: false              # Setting to true will use a lock file for readiness and liveness (incompatible with Istio)
+  httpProbe: true              # Setting to true will use a lock file for readiness and liveness (incompatible with Istio)
   readinessProbe:
     initialDelaySeconds: 0
     timeoutSeconds: 1           # Tuned-in to run checks early and quickly to support fast cold-start from zero replicas
@@ -40,10 +57,11 @@ faasfederation:
     initialDelaySeconds: 3
     timeoutSeconds: 1
     periodSeconds: 10
-  providers: "http://faasnetes.openfaas:8080,http://faaslambda.openfaas:8080"
+  providers: "http://faasnetes.openfaas:8080"
   default_provider: "http://faasnetes.openfaas:8080"
 
 faaslambda:
+  create: false
   image: openfaas/faas-lambda:0.1
   replicas: 1
   readTimeout : "60s"
@@ -64,7 +82,7 @@ faaslambda:
   aws_region: "eu-west-1"
 
 gateway:
-  image: openfaas/gateway:0.12.0
+  image: openfaas/gateway:0.18.17
   readTimeout : "65s"
   writeTimeout : "65s"
   upstreamTimeout : "60s"  # Must be smaller than read/write_timeout
@@ -74,37 +92,85 @@ gateway:
   nodePort: 31112
   maxIdleConns: 1024
   maxIdleConnsPerHost: 1024
+  directFunctions: true
+  # Custom logs provider url. For example openfaas-loki would be
+  # "http://ofloki-openfaas-loki.openfaas:9191/"
+  logsProviderURL: ""
+  resources:
+    requests:
+      memory: "120Mi"
+      cpu: "50m"
+
+basicAuthPlugin:
+  image: openfaas/basic-auth-plugin:0.18.17
+  replicas: 1
+  resources:
+    requests:
+      memory: "50Mi"
+      cpu: "20m"
+
 
 queueWorker:
-  image: openfaas/queue-worker:0.7.1
-  ackWait : "60s"
+  image: openfaas/queue-worker:0.11.0
+  # Control HA of queue-worker
   replicas: 1
+  # Control the concurrent invocations
+  maxInflight: 1
+  gatewayInvoke: true
+  queueGroup: "faas"
+  ackWait : "60s"
+  resources:
+    requests:
+      memory: "120Mi"
+      cpu: "50m"
 
-# image pull policy for openfaas components, can change to `IfNotPresent` in offline env
-openfaasImagePullPolicy: "Always"
 
 # replaces faas-netes with openfaas-operator
 operator:
-  image: openfaas/openfaas-operator:0.9.2
+  image: openfaas/faas-netes:0.10.5
   create: false
   # set this to false when creating multiple releases in the same cluster
   # must be true for the first one only
   createCRD: true
+  resources:
+    requests:
+      memory: "120Mi"
+      cpu: "50m"
 
 # monitoring and auto-scaling components
 # both components
 prometheus:
-  image: prom/prometheus:v2.7.1
+  image: prom/prometheus:v2.11.0
   create: true
+  resources:
+    requests:
+      memory: "512Mi"
 
 alertmanager:
-  image: prom/alertmanager:v0.16.1
+  image: prom/alertmanager:v0.18.0
   create: true
+  resources:
+    requests:
+      memory: "25Mi"
+    limits:
+      memory: "50Mi"
 
 # async provider
 nats:
-  image: nats-streaming:0.11.2
+  channel: "faas-request"
+  external:
+    clusterName: ""
+    enabled: false
+    host: ""
+    port: ""
+  image: nats-streaming:0.17.0
   enableMonitoring: false
+  metrics:
+    enabled: false
+    image: synadia/prometheus-nats-exporter:0.6.2
+  resources:
+    requests:
+      memory: "120Mi"
 
 # ingress configuration
 ingress:
@@ -122,12 +188,15 @@ ingress:
 
 # faas-idler configuration
 faasIdler:
-  create: true
+  image: openfaas/faas-idler:0.3.0
   replicas: 1
-  image: openfaas/faas-idler:0.1.9
-  inactivityDuration: 5m
-  reconcileInterval: 30s
-  dryRun: true                          # Set to true to enable the idler to apply changes and scale to zero
+  create: true
+  inactivityDuration: 30m               # If a function is inactive for 15 minutes, it may be scaled to zero
+  reconcileInterval: 2m                 # The interval between each attempt to scale functions to zero
+  dryRun: true                          # Set to false to enable the idler to apply changes and scale to zero
+  resources:
+    requests:
+      memory: "64Mi"                     # Set to true to enable the idler to apply changes and scale to zero
 
 nodeSelector: {}
 
@@ -136,3 +205,6 @@ tolerations: []
 affinity: {}
 
 kubernetesDNSDomain: cluster.local
+
+istio:
+  mtls: false
