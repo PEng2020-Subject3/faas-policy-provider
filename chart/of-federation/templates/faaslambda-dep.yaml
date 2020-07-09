@@ -1,6 +1,6 @@
 {{- $functionNs := default .Release.Namespace .Values.functionNamespace }}
 {{- if .Values.faaslambda.create}}
-apiVersion: apps/v1beta1 # for versions before 1.6.0 use extensions/v1beta1
+apiVersion: apps/v1 # for versions before 1.6.0 use extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
@@ -13,6 +13,9 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
 spec:
   replicas: {{ .Values.faaslambda.replicas }}
+  selector:
+    matchLabels:
+      app: faaslambda
   template:
     metadata:
       labels:
