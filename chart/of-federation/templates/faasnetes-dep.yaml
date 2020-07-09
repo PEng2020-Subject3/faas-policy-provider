@@ -12,6 +12,9 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
 spec:
   replicas: {{ .Values.faasnetes.replicas }}
+  selector:
+    matchLabels:
+      app: faasnetes
   template:
     metadata:
       labels:

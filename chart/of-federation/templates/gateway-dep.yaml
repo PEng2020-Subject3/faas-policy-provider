@@ -12,6 +12,9 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
 spec:
   replicas: {{ .Values.gateway.replicas }}
+  selector:
+    matchLabels:
+      app: gateway
   template:
     metadata:
       annotations:
