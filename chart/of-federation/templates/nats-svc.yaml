@@ -1,4 +1,4 @@
-{{- if and .Values.async (not .Values.nats.external.enabled) }}
+{{- if .Values.async }}
 ---
 apiVersion: v1
 kind: Service
@@ -22,11 +22,6 @@ spec:
       protocol: TCP
       name: monitoring
     {{- end }}
-    {{- if .Values.nats.metrics.enabled }}
-    - port: 7777
-      protocol: TCP
-      name: metrics
-  {{- end }}
   selector:
     app: nats
 {{- end }}

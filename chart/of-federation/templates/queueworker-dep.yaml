@@ -1,5 +1,5 @@
 {{- if .Values.async }}
-apiVersion: apps/v1
+apiVersion: apps/v1beta1 # for versions before 1.6.0 use extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
@@ -12,9 +12,6 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
 spec:
   replicas: {{ .Values.queueWorker.replicas }}
-  selector:
-    matchLabels:
-      app: queue-worker
   template:
     metadata:
       annotations:
@@ -22,53 +19,46 @@ spec:
       labels:
         app: queue-worker
     spec:
-      {{- if .Values.basic_auth }}
       volumes:
+      {{- if .Values.basic_auth }}
       - name: auth
         secret:
           secretName: basic-auth
       {{- end }}
+      {{- if .Values.http_signatures }}
+      - name: http-signing-private-key
+        secret:
+          secretName: http-signing-private-key
+      {{- end }}
       containers:
       - name:  queue-worker
-        resources:
-        {{- .Values.queueWorker.resources | toYaml | nindent 12 }}
         image: {{ .Values.queueWorker.image }}
         imagePullPolicy: {{ .Values.openfaasImagePullPolicy }}
         env:
-        {{- if .Values.nats.external.enabled }}
-        - name: faas_nats_address
-          value: "{{ .Values.nats.external.host }}"
-        - name: faas_nats_port
-          value: "{{ .Values.nats.external.port }}"
-        - name: faas_nats_cluster_name
-          value: "{{ .Values.nats.external.clusterName }}"
-        {{- else }}
-        - name: faas_nats_address
-          value: "nats.{{ .Release.Namespace }}.svc.{{ .Values.kubernetesDNSDomain }}"
-        {{- end}}
-        - name: faas_nats_channel
-          value: "{{ .Values.nats.channel }}"
-        - name: faas_nats_queue_group
-          value: "{{ .Values.queueWorker.queueGroup }}"
-        - name: faas_gateway_address
-          value: "gateway.{{ .Release.Namespace }}.svc.{{ .Values.kubernetesDNSDomain }}"
-        - name: "gateway_invoke"
-          value: "{{ .Values.queueWorker.gatewayInvoke }}"
+        - name : write_debug
+          value : "true"
         {{- if .Values.functionNamespace }}
         - name: faas_function_suffix
           value: ".{{ .Values.functionNamespace }}.svc.{{ .Values.kubernetesDNSDomain }}"
         {{- end }}
-        - name: max_inflight
-          value: "{{ .Values.queueWorker.maxInflight }}"
         - name: ack_wait    # Max duration of any async task / request
           value: {{ .Values.queueWorker.ackWait }}
-        {{- if .Values.basic_auth }}
         - name: secret_mount_path
           value: "/var/secrets"
+        {{- if .Values.basic_auth }}
         - name: basic_auth
           value: "{{ .Values.basic_auth }}"
+        {{- end }}
+        - name: faas_nats_address
+          value: "nats.{{ .Release.Namespace }}.svc.{{ .Values.kubernetesDNSDomain }}"
         volumeMounts:
+        {{- if .Values.basic_auth }}
         - name: auth
+          readOnly: true
+          mountPath: "/var/secrets"
+        {{- end }}
+        {{- if .Values.http_signatures }}
+        - name: http-signing-private-key
           readOnly: true
           mountPath: "/var/secrets"
         {{- end }}
