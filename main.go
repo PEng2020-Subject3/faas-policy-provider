@@ -62,8 +62,12 @@ func main() {
 	proxyFunc := proxy.NewHandlerFunc(cfg.FaaSConfig,
 		handlers.NewFunctionLookup(providerLookup))
 
+	policyStore := types.PolicyStore{}
+	policyStore.AddPolicy(types.Policy{"GDPR", []string{"region:eu"}})
+	policyStore.AddPolicyFunction("test", "GDPR", types.PolicyFunction{"test-GDPR", []string{"GDPR"}, ""})
+
 	bootstrapHandlers := bootTypes.FaaSHandlers{
-		FunctionProxy:  handlers.MakeProxyHandler(proxyFunc),
+		FunctionProxy:  handlers.MakeProxyHandler(proxyFunc, policyStore),
 		DeleteHandler:  handlers.MakeDeleteHandler(proxyFunc),
 		DeployHandler:  handlers.MakeDeployHandler(proxyFunc, providerLookup),
 		FunctionReader: handlers.MakeFunctionReader(cfg.Providers),

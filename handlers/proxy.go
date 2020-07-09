@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/PEng2020-Subject3/faas-policy-provider/types"
 	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,7 +20,7 @@ import (
 const urlScheme = "http"
 
 // MakeProxyHandler creates a handler to invoke functions downstream
-func MakeProxyHandler(proxy http.HandlerFunc) http.HandlerFunc {
+func MakeProxyHandler(proxy http.HandlerFunc, policyController types.PolicyController) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		log.Info("proxy request")
@@ -31,7 +32,17 @@ func MakeProxyHandler(proxy http.HandlerFunc) http.HandlerFunc {
 		}
 
 		functionName := strings.Split(r.URL.Path, "/")[2]
-		// todo work with the name here
+
+		// TODO: Policy Managment
+		query := r.URL.Query()
+		policy, ok := query["policy"]
+		if ok && len(policy) == 1 {
+			log.Info("policy: " + policy[0])
+			log.Info(policyController.GetPolicyFunction(functionName, policy[0]))
+		} else {
+			log.Info("no policy defined")
+		}
+		
 		pathVars["name"] = functionName
 		pathVars["params"] = r.URL.Path
 		proxy.ServeHTTP(w, r)
