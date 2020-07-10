@@ -32,9 +32,7 @@ func Test_Invoke(t *testing.T) {
 	}
 
 	policyStore := policy.PolicyStore{}
-	policyStore.AddPolicy(policy.Policy{"GDPR", []string{"region:eu"}})
-	policyStore.AddPolicyFunction("test", "GDPR", policy.PolicyFunction{"test-GDPR", []string{"GDPR"}, ""})
-
+	
 	config := types.FaaSConfig{ReadTimeout: time.Minute * 1}
 	proxyFunc := proxy.NewHandlerFunc(config, NewFunctionLookup(providerLookup))
 	MakeProxyHandler(proxyFunc, policyStore).ServeHTTP(rr, req)

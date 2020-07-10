@@ -227,6 +227,9 @@ spec:
           value: "{{ .Values.faasfederation.providers }}"
         - name: default_provider
           value: "{{ .Values.faasfederation.default_provider }}"
+        - name: policies
+          value: "{{ .Values.faasfederation.policies | toYaml | b64enc }}"
+
         ports:
         - containerPort: 8081
           protocol: TCP

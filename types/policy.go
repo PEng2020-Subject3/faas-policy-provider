@@ -2,8 +2,21 @@
 package types
 
 type Policy struct {
-	Name string
-	Constraints []string
+	Name string `yaml:"name"`
+	EnvVars *map[string]string `yaml:"environment"`
+	Constraints *[]string `yaml:"constraints"`
+	Secrets *[]string `yaml:"secrets"`
+	Labels *map[string]string `yaml:"labels"`
+	Annotations *map[string]string `yaml:"annotations"`
+	Limits *FunctionResources `yaml:"limits"`
+	Requests *FunctionResources `yaml:"requests"`
+	ReadOnlyRootFilesystem *bool `yaml:"readOnlyRootFilesystem"`
+	Namespace *string `yaml:"namespace,omitempty"`
+}
+
+type FunctionResources struct {
+	Memory string `yaml:"memory"`
+	CPU    string `yaml:"cpu"`
 }
 
 type PolicyFunction struct {
@@ -17,6 +30,7 @@ type PolicyController interface {
 	// Return added function name
 	AddPolicyFunction(lookUpName string, policyName string, function PolicyFunction) string
 	AddPolicy(policy Policy) string
+	AddPolicies(policies []Policy)
 }
 
 type PolicyStore struct {
@@ -51,4 +65,10 @@ func (p PolicyStore) AddPolicy(policy Policy) string {
 	}	
 	p.policies[policy.Name] = policy
 	return policy.Name
+}
+
+func (p PolicyStore) AddPolicies(policies []Policy) {
+	for _, policy := range policies {
+		p.AddPolicy(policy)
+	}
 }
