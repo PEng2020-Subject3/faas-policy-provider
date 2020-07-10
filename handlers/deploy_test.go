@@ -11,6 +11,7 @@ import (
 	acc "github.com/PEng2020-Subject3/faas-policy-provider/testing"
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/proxy"
+	policy "github.com/PEng2020-Subject3/faas-policy-provider/types"
 	"github.com/openfaas/faas-provider/types"
 )
 
@@ -29,10 +30,11 @@ func Test_Deploy(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	policyStore := new(policy.PolicyStore)
 	config := types.FaaSConfig{ReadTimeout: time.Minute * 1}
 	proxyFunc := proxy.NewHandlerFunc(config, NewFunctionLookup(providerLookup))
 
-	MakeDeployHandler(proxyFunc, providerLookup).ServeHTTP(rr, req)
+	MakeDeployHandler(proxyFunc, providerLookup, policyStore).ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)

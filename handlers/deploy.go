@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	ptypes "github.com/PEng2020-Subject3/faas-policy-provider/types"
 	types "github.com/openfaas/faas-provider/types"
 
 	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
@@ -18,7 +19,7 @@ import (
 )
 
 // MakeDeployHandler creates a handler to create new functions in the cluster
-func MakeDeployHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLookup) http.HandlerFunc {
+func MakeDeployHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLookup, policyController ptypes.PolicyController) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		log.Info("deployment request")
@@ -29,6 +30,11 @@ func MakeDeployHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLo
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		policyController.AddPolicyFunction(function.Service, 
+			ptypes.PolicyFunction{
+				InternalName: function.Service,
+			})
 
 		proxyDeployment(proxy, function, w, r)
 

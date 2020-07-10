@@ -9,18 +9,28 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"bytes"
+	//"io"
+	"io/ioutil"
+	"encoding/json"
 
 	"github.com/gorilla/mux"
 
+	ftypes "github.com/openfaas/faas-provider/types"
 	"github.com/PEng2020-Subject3/faas-policy-provider/types"
 	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
 	log "github.com/sirupsen/logrus"
 )
 
-const urlScheme = "http"
+const (
+	watchdogPort           	= "8080"
+	defaultContentType     	= "text/plain"
+	errMissingFunctionName 	= "Please provide a valid route /function/function_name."
+	urlScheme 							= "http"
+)
 
 // MakeProxyHandler creates a handler to invoke functions downstream
-func MakeProxyHandler(proxy http.HandlerFunc, policyController types.PolicyController) http.HandlerFunc {
+func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLookup, policyController types.PolicyController) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		log.Info("proxy request")
@@ -33,16 +43,57 @@ func MakeProxyHandler(proxy http.HandlerFunc, policyController types.PolicyContr
 
 		functionName := strings.Split(r.URL.Path, "/")[2]
 
-		// TODO: Policy Managment
+		// Policy Managment
 		query := r.URL.Query()
+
 		policy, ok := query["policy"]
 		if ok && len(policy) == 1 {
 			log.Info("policy: " + policy[0])
-			log.Info(policyController.GetPolicyFunction(functionName, policy[0]))
+			
+			policyFunctionName, err := policyController.GetPolicyFunction(functionName, policy[0])
+			if err != nil {
+				err, ok := err.(types.FunctionError)
+				if ok {
+					log.Errorln("error during function request. ", err.Error())
+					w.WriteHeader(http.StatusNotFound)
+					return
+
+				} else {
+					log.Info("function found but not policy", err.Error()) 
+
+					policyFunction := types.PolicyFunction{functionName, policy[0]}
+					deployment, ok := providerLookup.GetFunction(functionName)					
+					if !ok {
+						log.Errorln("error during function request. ", err.Error())
+						w.WriteHeader(http.StatusNotFound)
+						return
+					}
+
+					url, err := providerLookup.Resolve(functionName)
+					if err != nil {
+						log.Errorln("error during function request. ", err.Error())
+						w.WriteHeader(http.StatusNotFound)
+						return
+					}
+
+					*deployment = policyController.BuildDeploymentForPolicy(policyFunction, deployment)	
+					depErr := policyDeploy(w, r, url, deployment)
+					if depErr != nil {
+						log.Errorln("error during function request. ", depErr.Error())
+						return
+					}
+					policyController.AddPolicyFunction(functionName, policyFunction)
+					providerLookup.AddFunction(deployment)
+					policyFunctionName = deployment.Service
+				}
+			}
+
+			functionName = policyFunctionName
+
 		} else {
 			log.Info("no policy defined")
 		}
-		
+
 		pathVars["name"] = functionName
 		pathVars["params"] = r.URL.Path
 		proxy.ServeHTTP(w, r)
@@ -60,6 +111,54 @@ type FunctionLookup struct {
 	// method, which is an implementation of net.LookupIP
 	dnsrrLookup    func(context.Context, string) ([]net.IP, error)
 	providerLookup routing.ProviderLookup
+}
+
+func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url.URL, deployment *ftypes.FunctionDeployment) error {
+	ctx := originalReq.Context()
+
+	json, err := json.Marshal(deployment)
+	if err != nil {
+		return err
+	}
+
+	upstreamReq, err := buildProxyRequest(originalReq, *baseURL, "/system/functions")
+	if err != nil {
+		return err
+	}
+	if upstreamReq.Body != nil {
+		defer upstreamReq.Body.Close()
+	}
+
+	upstreamReq.Method = "POST"
+	upstreamReq.Body = ioutil.NopCloser(bytes.NewReader(json))
+	upstreamReq.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	log.Info(upstreamReq)
+
+	client := &http.Client{}
+	resp, err := client.Do(upstreamReq.WithContext(ctx))
+	if err != nil {
+			return err
+	}
+
+	if err != nil {
+		log.Printf("error with policy deploy request to: %s, %s\n", upstreamReq.URL.String(), err.Error())
+		return err
+	}
+	
+	defer resp.Body.Close()	
+
+	/*
+	clientHeader := w.Header()
+	copyHeaders(clientHeader, &resp.Header)
+	w.Header().Set("Content-Type", getContentType(resp.Header, originalReq.Header))
+
+	w.WriteHeader(resp.StatusCode)
+	io.Copy(w, resp.Body)
+	*/
+
+	defer resp.Body.Close()
+	log.Info("response Status:", resp.Status)
+	return nil
 }
 
 // NewFunctionLookup creates a new FunctionLookup resolver
@@ -117,4 +216,61 @@ func lookupIP(ctx context.Context, host string) ([]net.IP, error) {
 		ips[i] = ia.IP
 	}
 	return ips, nil
+}
+
+func buildProxyRequest(originalReq *http.Request, baseURL url.URL, extraPath string) (*http.Request, error) {
+	log.Infof("build proxy request with %s for %s", baseURL.String(), extraPath)
+
+	host := baseURL.Host
+
+	url := url.URL{
+		Scheme:   urlScheme,
+		Host:     host,
+		Path:     extraPath,
+		RawQuery: originalReq.URL.RawQuery,
+	}
+
+	upstreamReq, err := http.NewRequest(originalReq.Method, url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	copyHeaders(upstreamReq.Header, &originalReq.Header)
+
+	if len(originalReq.Host) > 0 && upstreamReq.Header.Get("X-Forwarded-Host") == "" {
+		upstreamReq.Header["X-Forwarded-Host"] = []string{originalReq.Host}
+	}
+	if upstreamReq.Header.Get("X-Forwarded-For") == "" {
+		upstreamReq.Header["X-Forwarded-For"] = []string{originalReq.RemoteAddr}
+	}
+
+	if originalReq.Body != nil {
+		upstreamReq.Body = originalReq.Body
+	}
+
+	return upstreamReq, nil
+}
+
+// copyHeaders clones the header values from the source into the destination.
+func copyHeaders(destination http.Header, source *http.Header) {
+	for k, v := range *source {
+		vClone := make([]string, len(v))
+		copy(vClone, v)
+		destination[k] = vClone
+	}
+}
+
+// getContentType resolves the correct Content-Type for a proxied function.
+func getContentType(request http.Header, proxyResponse http.Header) (headerContentType string) {
+	responseHeader := proxyResponse.Get("Content-Type")
+	requestHeader := request.Get("Content-Type")
+
+	if len(responseHeader) > 0 {
+		headerContentType = responseHeader
+	} else if len(requestHeader) > 0 {
+		headerContentType = requestHeader
+	} else {
+		headerContentType = defaultContentType
+	}
+
+	return headerContentType
 }

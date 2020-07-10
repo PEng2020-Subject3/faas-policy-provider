@@ -31,11 +31,11 @@ func Test_Invoke(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	policyStore := policy.PolicyStore{}
+	policyStore := new(policy.PolicyStore)
 	
 	config := types.FaaSConfig{ReadTimeout: time.Minute * 1}
 	proxyFunc := proxy.NewHandlerFunc(config, NewFunctionLookup(providerLookup))
-	MakeProxyHandler(proxyFunc, policyStore).ServeHTTP(rr, req)
+	MakeProxyHandler(proxyFunc, providerLookup, policyStore).ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)

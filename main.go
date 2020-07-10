@@ -82,13 +82,13 @@ func main() {
 	}
 	log.Infof("--- t:\n%v\n\n", out)
 	
-	policyStore := types.PolicyStore{}
+	policyStore := types.NewPolicyStore()
 	policyStore.AddPolicies(out)
 	
 	bootstrapHandlers := bootTypes.FaaSHandlers{
-		FunctionProxy:  handlers.MakeProxyHandler(proxyFunc, policyStore),
+		FunctionProxy:  handlers.MakeProxyHandler(proxyFunc, providerLookup, policyStore),
 		DeleteHandler:  handlers.MakeDeleteHandler(proxyFunc),
-		DeployHandler:  handlers.MakeDeployHandler(proxyFunc, providerLookup),
+		DeployHandler:  handlers.MakeDeployHandler(proxyFunc, providerLookup, policyStore),
 		FunctionReader: handlers.MakeFunctionReader(cfg.Providers),
 		ReplicaReader:  handlers.MakeReplicaReader(),
 		ReplicaUpdater: handlers.MakeReplicaUpdater(),
