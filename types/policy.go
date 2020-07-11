@@ -15,15 +15,10 @@ type Policy struct {
 	Secrets 								*[]string `yaml:"secrets"`
 	Labels 									*map[string]string `yaml:"labels"`
 	Annotations 						*map[string]string `yaml:"annotations"`
-	Limits 									*FunctionResources `yaml:"limits"`
-	Requests 								*FunctionResources `yaml:"requests"`
+	Limits 									*fTypes.FunctionResources `yaml:"limits"`
+	Requests 								*fTypes.FunctionResources `yaml:"requests"`
 	ReadOnlyRootFilesystem 	*bool `yaml:"readOnlyRootFilesystem"`
 	Namespace 							*string `yaml:"namespace,omitempty"`
-}
-
-type FunctionResources struct {
-	Memory string `yaml:"memory"`
-	CPU    string `yaml:"cpu"`
 }
 
 type PolicyFunction struct {
@@ -112,18 +107,22 @@ func (p *PolicyStore) GetPolicy(policyName string) (Policy, bool) {
 
 func (p *PolicyStore) BuildDeployment(function *PolicyFunction,
 	deployment *fTypes.FunctionDeployment) (*fTypes.FunctionDeployment, *PolicyFunction) {
-		name := deployment.Service + function.Policy	
+		name := deployment.Service + "-" + function.Policy	
 		
-		if *(deployment.Annotations) == nil {
-			*(deployment.Annotations) = *new(map[string]string)
-		}
+		if deployment.Annotations == nil {
+			deployment.Annotations = new(map[string]string)
+		}		
 
+
+		// Keep these last to override any illegal statements
 		(*deployment.Annotations)["policy"] = function.Policy
 		(*deployment.Annotations)["parent_function"] = deployment.Service		
 		(*deployment.Labels)["faas_function"] = name
 
 		function.InternalName = name
 		deployment.Service = name
+
+		log.Info(deployment)
 
 		return deployment, function
 }
