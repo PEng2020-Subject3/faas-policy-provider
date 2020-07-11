@@ -9,9 +9,9 @@ import (
 
 	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
 	acc "github.com/PEng2020-Subject3/faas-policy-provider/testing"
+	policy "github.com/PEng2020-Subject3/faas-policy-provider/types"
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/proxy"
-	policy "github.com/PEng2020-Subject3/faas-policy-provider/types"
 	"github.com/openfaas/faas-provider/types"
 )
 

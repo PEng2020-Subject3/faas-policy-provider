@@ -5,13 +5,14 @@ import (
 	"os"
 	"strings"
 
+	b64 "encoding/base64"
+
 	"github.com/PEng2020-Subject3/faas-policy-provider/handlers"
 	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
 	"github.com/PEng2020-Subject3/faas-policy-provider/types"
 	"github.com/PEng2020-Subject3/faas-policy-provider/version"
 	bootstrap "github.com/openfaas/faas-provider"
 	"github.com/openfaas/faas-provider/proxy"
-	b64 "encoding/base64"
 
 	bootTypes "github.com/openfaas/faas-provider/types"
 	log "github.com/sirupsen/logrus"
@@ -65,17 +66,17 @@ func main() {
 		handlers.NewFunctionLookup(providerLookup))
 
 	/*data := `
-  - name: gdpr
-    constraints:
-        - "topology.kubernetes.io/region=us-east-1"
-  - name: restricted
-    readonly_root_filesystem: true
-    environment:
-	      db_host: usecase-db-restricted-postgresql
-	      db_password: ngvc8dXsVP
-    constraints:
-        - "openfaas.policy/privacy-level=3"
-        - "node.kubernetes.io/instance-type=m3.medium"`*/
+	  - name: gdpr
+	    constraints:
+	        - "topology.kubernetes.io/region=us-east-1"
+	  - name: restricted
+	    readonly_root_filesystem: true
+	    environment:
+		      db_host: usecase-db-restricted-postgresql
+		      db_password: ngvc8dXsVP
+	    constraints:
+	        - "openfaas.policy/privacy-level=3"
+	        - "node.kubernetes.io/instance-type=m3.medium"`*/
 
 	var out []types.Policy
 	sDec, _ := b64.StdEncoding.DecodeString(osEnv.Getenv("policies"))
@@ -84,11 +85,11 @@ func main() {
 		log.Fatalf("error: %v", err)
 	}
 	log.Infof("--- t:\n%v\n\n", out)
-	
+
 	policyStore := types.NewPolicyStore()
 	policyStore.AddPolicies(out)
 	policyStore.ReloadFromCache(providerLookup.GetFunctions())
-	
+
 	bootstrapHandlers := bootTypes.FaaSHandlers{
 		FunctionProxy:  handlers.MakeProxyHandler(proxyFunc, providerLookup, policyStore),
 		DeleteHandler:  handlers.MakeDeleteHandler(proxyFunc, providerLookup, policyStore),
