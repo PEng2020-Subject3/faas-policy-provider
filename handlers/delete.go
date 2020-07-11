@@ -9,8 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/PEng2020-Subject3/faas-policy-provider/types"
 	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
+	"github.com/PEng2020-Subject3/faas-policy-provider/types"
 
 	"github.com/gorilla/mux"
 

@@ -9,10 +9,10 @@ import (
 
 	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
 	acc "github.com/PEng2020-Subject3/faas-policy-provider/testing"
+	policy "github.com/PEng2020-Subject3/faas-policy-provider/types"
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/proxy"
 	"github.com/openfaas/faas-provider/types"
-	policy "github.com/PEng2020-Subject3/faas-policy-provider/types"
 )
 
 func Test_Invoke(t *testing.T) {
@@ -32,7 +32,7 @@ func Test_Invoke(t *testing.T) {
 	}
 
 	policyStore := new(policy.PolicyStore)
-	
+
 	config := types.FaaSConfig{ReadTimeout: time.Minute * 1}
 	proxyFunc := proxy.NewHandlerFunc(config, NewFunctionLookup(providerLookup))
 	MakeProxyHandler(proxyFunc, providerLookup, policyStore).ServeHTTP(rr, req)
