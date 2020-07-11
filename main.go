@@ -71,9 +71,10 @@ func main() {
   - name: restricted
     readonly_root_filesystem: true
     environment:
-        http_proxy: http://proxy1.corp.com:3128
+	      db_host: usecase-db-restricted-postgresql
+	      db_password: ngvc8dXsVP
     constraints:
-        - "privacy-level:3"
+        - "openfaas.policy/privacy-level=3"
         - "node.kubernetes.io/instance-type=m3.medium"`*/
 
 	var out []types.Policy

@@ -66,9 +66,10 @@ faasfederation:
   - name: restricted
     readonly_root_filesystem: true
     environment:
-        http_proxy: http://proxy1.corp.com:3128
+      db_host: usecase-db-restricted-postgresql
+      db_password: ngvc8dXsVP
     constraints:
-        - "privacy-level:3"
+        - "openfaas.policy/privacy-level=3"
         - "node.kubernetes.io/instance-type=m3.medium"
 
 faaslambda:
@@ -202,9 +203,9 @@ faasIdler:
   image: openfaas/faas-idler:0.3.0
   replicas: 1
   create: true
-  inactivityDuration: 30m               # If a function is inactive for 15 minutes, it may be scaled to zero
-  reconcileInterval: 2m                 # The interval between each attempt to scale functions to zero
-  dryRun: true                          # Set to false to enable the idler to apply changes and scale to zero
+  inactivityDuration: 1m               # If a function is inactive for 1 minutes, it may be scaled to zero
+  reconcileInterval: 30s                 # The interval between each attempt to scale functions to zero
+  dryRun: false                          # Set to false to enable the idler to apply changes and scale to zero
   resources:
     requests:
       memory: "64Mi"                     # Set to true to enable the idler to apply changes and scale to zero
