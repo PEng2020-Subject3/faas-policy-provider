@@ -157,6 +157,7 @@ prometheus:
   resources:
     requests:
       memory: "512Mi"
+  nodePort: 31113
 
 alertmanager:
   image: prom/alertmanager:v0.18.0
