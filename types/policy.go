@@ -35,6 +35,7 @@ type PolicyController interface {
 	AddPolicyFunction(lookUpName string, function PolicyFunction) string
 	AddPolicy(policy Policy) string
 	AddPolicies(policies []Policy)
+	GetPolicy(policyName string) (Policy, bool)
 	BuildDeploymentForPolicy(function PolicyFunction, deployment *bootTypes.FunctionDeployment) bootTypes.FunctionDeployment
 }
 
@@ -93,6 +94,12 @@ func (p *PolicyStore) AddPolicies(policies []Policy) {
 	for _, policy := range policies {
 		p.AddPolicy(policy)
 	}
+}
+func (p *PolicyStore) GetPolicy(policyName string) (Policy, bool) {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	policy, ok := p.policies[policyName]
+	return policy, ok
 }
 
 func (p *PolicyStore) BuildDeploymentForPolicy(function PolicyFunction,

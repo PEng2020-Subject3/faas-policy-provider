@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 	"bytes"
+	"errors"
 	//"io"
 	"io/ioutil"
 	"encoding/json"
@@ -48,44 +49,23 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 
 		policy, ok := query["policy"]
 		if ok && len(policy) == 1 {
-			log.Info("policy: " + policy[0])
+			policyName := policy[0]
+			log.Info("request for function: " + functionName)
+			log.Info("request for policy: " + policyName)
+
+			if _, ok := policyController.GetPolicy(policyName); !ok {
+				log.Infof("error during function request. Policy %s not found", policyName)
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
 			
-			policyFunctionName, err := policyController.GetPolicyFunction(functionName, policy[0])
+			policyFunctionName, err := policyProxy(w, r, functionName, policyName, 
+				providerLookup, policyController)
+			
 			if err != nil {
-				err, ok := err.(types.FunctionError)
-				if ok {
-					log.Errorln("error during function request. ", err.Error())
-					w.WriteHeader(http.StatusNotFound)
-					return
-
-				} else {
-					log.Info("function found but not policy", err.Error()) 
-
-					policyFunction := types.PolicyFunction{functionName, policy[0]}
-					deployment, ok := providerLookup.GetFunction(functionName)					
-					if !ok {
-						log.Errorln("error during function request. ", err.Error())
-						w.WriteHeader(http.StatusNotFound)
-						return
-					}
-
-					url, err := providerLookup.Resolve(functionName)
-					if err != nil {
-						log.Errorln("error during function request. ", err.Error())
-						w.WriteHeader(http.StatusNotFound)
-						return
-					}
-
-					*deployment = policyController.BuildDeploymentForPolicy(policyFunction, deployment)	
-					depErr := policyDeploy(w, r, url, deployment)
-					if depErr != nil {
-						log.Errorln("error during function request. ", depErr.Error())
-						return
-					}
-					policyController.AddPolicyFunction(functionName, policyFunction)
-					providerLookup.AddFunction(deployment)
-					policyFunctionName = deployment.Service
-				}
+				log.Errorln("error during function request. ", err.Error())
+				w.WriteHeader(http.StatusNotFound)
+				return
 			}
 
 			functionName = policyFunctionName
@@ -111,6 +91,44 @@ type FunctionLookup struct {
 	// method, which is an implementation of net.LookupIP
 	dnsrrLookup    func(context.Context, string) ([]net.IP, error)
 	providerLookup routing.ProviderLookup
+}
+
+func policyProxy(w http.ResponseWriter, r *http.Request, functionName string, policy string, 
+	providerLookup routing.ProviderLookup, policyController types.PolicyController) (string, error) {
+
+	policyFunctionName, err := policyController.GetPolicyFunction(functionName, policy)
+	if err != nil {
+		err, ok := err.(types.FunctionError)
+		if ok {
+			log.Errorln("error during function request. ", err.Error())
+			return "", err
+
+		} else {
+			log.Info("function found but not policy. ", err.(types.PolicyError).Error()) 
+
+			policyFunction := types.PolicyFunction{functionName, policy}
+			deployment, ok := providerLookup.GetFunction(functionName)					
+			if !ok {
+				log.Errorln("error for provider resolving function.")
+				return "", errors.New("error for provider resolving function.")
+			}
+
+			url, err := providerLookup.Resolve(functionName)
+			if err != nil {
+				return "", err
+			}
+
+			*deployment = policyController.BuildDeploymentForPolicy(policyFunction, deployment)	
+			depErr := policyDeploy(w, r, url, deployment)
+			if depErr != nil {
+				return "", depErr
+			}
+			policyController.AddPolicyFunction(functionName, policyFunction)
+			providerLookup.AddFunction(deployment)
+			policyFunctionName = deployment.Service
+		}
+	}
+	return policyFunctionName, nil
 }
 
 func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url.URL, deployment *ftypes.FunctionDeployment) error {
