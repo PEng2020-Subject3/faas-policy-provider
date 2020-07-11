@@ -31,7 +31,7 @@ up: build
 
 .PHONY: push
 push:
-	docker tag gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:latest gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:${VERSION}
+	docker tag gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:${TAG} gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:${VERSION}
 	docker push gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:${VERSION}
 
 .PHONY: release
