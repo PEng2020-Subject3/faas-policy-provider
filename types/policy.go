@@ -183,4 +183,3 @@ func (p *PolicyStore) DeleteFunction(f *fTypes.FunctionDeployment) {
 
 	log.Infof("Not able to delete %s from policy cache %s", parent_name, policy)	
 }
-

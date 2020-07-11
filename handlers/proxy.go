@@ -11,7 +11,6 @@ import (
 	"time"
 	"bytes"
 	"errors"
-	//"io"
 	"io/ioutil"
 	"encoding/json"
 
@@ -155,26 +154,34 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 	client := &http.Client{}
 	resp, err := client.Do(upstreamReq.WithContext(ctx))
 	if err != nil {
-			return err
-	}
-
-	if err != nil {
 		log.Printf("error with policy deploy request to: %s, %s\n", upstreamReq.URL.String(), err.Error())
 		return err
 	}
-	
-	defer resp.Body.Close()	
-
-	/*
-	clientHeader := w.Header()
-	copyHeaders(clientHeader, &resp.Header)
-	w.Header().Set("Content-Type", getContentType(resp.Header, originalReq.Header))
-
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
-	*/
 
 	log.Info("response Status: ", resp.Status)
+	defer resp.Body.Close()		
+
+	// poll for deployed function	
+	pollReq, err := buildProxyRequest(originalReq, *baseURL, "/function/" + deployment.Service)
+	if err != nil {
+		return err
+	}
+
+	start := time.Now()
+	for {		
+		log.Info("polling for newly deployed function: " + pollReq.URL.String())
+		resp, err := client.Do(pollReq.WithContext(ctx))
+		if err != nil {
+			log.Printf("error plling after policy deploy request to: %s, %s\n", pollReq.URL.String(), err.Error())
+			return err
+		}
+		if resp.StatusCode == 200 {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	elapsed := time.Since(start)
+	log.Infof("PERFORMANCE: polling took %s", elapsed)	
 	return nil
 }
 
