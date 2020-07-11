@@ -59,6 +59,17 @@ faasfederation:
     periodSeconds: 10
   providers: "http://faasnetes.openfaas:8080"
   default_provider: "http://faasnetes.openfaas:8080"
+  policies:
+  - name: gdpr
+    constraints:
+        - "topology.kubernetes.io/region=us-east-1"
+  - name: restricted
+    readonly_root_filesystem: true
+    environment:
+        http_proxy: http://proxy1.corp.com:3128
+    constraints:
+        - "privacy-level:3"
+        - "node.kubernetes.io/instance-type=m3.medium"
 
 faaslambda:
   create: false

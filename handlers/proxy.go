@@ -42,10 +42,6 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 			pathVars = mux.Vars(r)
 		}
 
-		log.Info(r)
-
-
-
 		functionName := strings.Split(r.URL.Path, "/")[2]
 		oldFunctionName := functionName
 

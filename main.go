@@ -11,6 +11,7 @@ import (
 	"github.com/PEng2020-Subject3/faas-policy-provider/version"
 	bootstrap "github.com/openfaas/faas-provider"
 	"github.com/openfaas/faas-provider/proxy"
+	b64 "encoding/base64"
 
 	bootTypes "github.com/openfaas/faas-provider/types"
 	log "github.com/sirupsen/logrus"
@@ -63,7 +64,7 @@ func main() {
 	proxyFunc := proxy.NewHandlerFunc(cfg.FaaSConfig,
 		handlers.NewFunctionLookup(providerLookup))
 
-	data := `
+	/*data := `
   - name: gdpr
     constraints:
         - "topology.kubernetes.io/region=us-east-1"
@@ -73,10 +74,11 @@ func main() {
         http_proxy: http://proxy1.corp.com:3128
     constraints:
         - "privacy-level:3"
-        - "node.kubernetes.io/instance-type=m3.medium"`
+        - "node.kubernetes.io/instance-type=m3.medium"`*/
 
 	var out []types.Policy
-	err = yaml.Unmarshal([]byte(data), &out)
+	sDec, _ := b64.StdEncoding.DecodeString(osEnv.Getenv("policies"))
+	err = yaml.Unmarshal([]byte(sDec), &out)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
