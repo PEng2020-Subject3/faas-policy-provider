@@ -55,7 +55,7 @@ func NewPolicyStore() *PolicyStore {
 func (p *PolicyStore) GetPolicyFunction(lookUpName string, policyName string) (int, string, error) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	log.Infof("get policy function policy %s", lookUpName)
+	log.Infof("[policy] get policy function policy %s", lookUpName)
 
 	functions, ok := p.lookUp[lookUpName]
 	if !ok {
@@ -72,7 +72,7 @@ func (p *PolicyStore) GetPolicyFunction(lookUpName string, policyName string) (i
 func (p *PolicyStore) AddPolicyFunction(lookUpName string, function PolicyFunction) string {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-	log.Infof("add function to policy cache: lookup for %s with %s", lookUpName, function.InternalName)
+	log.Infof("[policy] add function to policy cache: lookup for %s with %s", lookUpName, function.InternalName)
 
 	if p.lookUp == nil {
 		p.lookUp = make(map[string][]PolicyFunction)
@@ -170,11 +170,11 @@ func (p *PolicyStore) BuildDeployment(function *PolicyFunction,
 }
 
 func (p *PolicyStore) ReloadFromCache(functions []*fTypes.FunctionDeployment) {
-	log.Info("reload policy cache ...")
+	log.Info("[policy] reload policy cache ...")
 	for _, f := range functions {
 
 		if *f.Annotations == nil {
-			log.Infof("no annotations found for %s", f.Service)
+			log.Infof("[policy] no annotations found for %s", f.Service)
 			return
 		}
 
@@ -187,31 +187,31 @@ func (p *PolicyStore) ReloadFromCache(functions []*fTypes.FunctionDeployment) {
 			}
 		}
 	}
-	log.Info("policy cache reloaded succesfully")
+	log.Info("[policy] policy cache reloaded succesfully")
 }
 
 func (p *PolicyStore) DeleteFunction(f *fTypes.FunctionDeployment) {
-	log.Infof("Attemtping to delete %s from policy cache", f.Service)
+	log.Infof("[policy] Attemtping to delete %s from policy cache", f.Service)
 	if *f.Annotations == nil {
-		log.Infof("no annotations found for %s", f.Service)
+		log.Infof("[policy] no annotations found for %s", f.Service)
 		return
 	}
 	parent_name, ok := (*f.Annotations)["parent_function"]
 	if !ok {
-		log.Warnf("no parent_function found for %s", f.Service)
+		log.Warnf("[policy] no parent_function found for %s", f.Service)
 		return
 	}
 	policy, ok := (*f.Annotations)["policy"]
 	if !ok {
-		log.Warnf("no policy found for %s", f.Service)
+		log.Warnf("[policy] no policy found for %s", f.Service)
 		return
 	}
 
-	log.Infof("Attempting to delete %s from policy cache %s", parent_name, policy)
+	log.Infof("[policy] Attempting to delete %s from policy cache %s", parent_name, policy)
 
 	i, _, err := p.GetPolicyFunction(parent_name, policy)
 	if err != nil {
-		log.Warnf("no policy function found for %s with %s", parent_name, policy)
+		log.Warnf("[policy] no policy function found for %s with %s", parent_name, policy)
 		return
 	}
 
@@ -219,10 +219,10 @@ func (p *PolicyStore) DeleteFunction(f *fTypes.FunctionDeployment) {
 	defer p.lock.Unlock()
 
 	if err == nil {
-		log.Infof("delete function from policy cache: lookup for %s with %s", parent_name, f.Service)
+		log.Infof("[policy] delete function from policy cache: lookup for %s with %s", parent_name, f.Service)
 		p.lookUp[parent_name] = append(p.lookUp[parent_name][:i], p.lookUp[parent_name][i+1:]...) // delete
 		return
 	}
 
-	log.Infof("Not able to delete %s from policy cache %s", parent_name, policy)
+	log.Infof("[policy] Not able to delete %s from policy cache %s", parent_name, policy)
 }

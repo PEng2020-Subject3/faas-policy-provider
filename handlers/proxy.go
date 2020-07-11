@@ -50,11 +50,11 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 		policy, ok := query["policy"]
 		if ok && len(policy) == 1 {
 			policyName := policy[0]
-			log.Infof("request for function: %s", functionName)
-			log.Infof("request for policy: %s", policyName)
+			log.Infof("[policy] request for function: %s", functionName)
+			log.Infof("[policy] request for policy: %s", policyName)
 
 			if _, ok := policyController.GetPolicy(policyName); !ok {
-				log.Infof("error during function request. Policy %s not found", policyName)
+				log.Infof("[policy] error during function request. Policy %s not found", policyName)
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
@@ -63,7 +63,7 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 				providerLookup, policyController)
 
 			if err != nil {
-				log.Errorln("error during function request. ", err.Error())
+				log.Errorln("[policy] error during function request. ", err.Error())
 				w.WriteHeader(http.StatusNotFound)
 				return
 			}
@@ -71,7 +71,7 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 			functionName = policyFunctionName
 
 		} else {
-			log.Info("no policy defined")
+			log.Info("[policy] no policy defined")
 		}
 
 		pathVars["name"] = functionName
@@ -98,28 +98,28 @@ type FunctionLookup struct {
 func policyProxy(w http.ResponseWriter, r *http.Request, functionName string, policy string,
 	providerLookup routing.ProviderLookup, policyController types.PolicyController) (string, error) {
 
-	log.Infof("resolve policy function %s", functionName)
+	log.Infof("[policy] resolve policy function %s", functionName)
 	_, policyFunctionName, err := policyController.GetPolicyFunction(functionName, policy)
 	if err != nil {
-		log.Infof("function %s with policy %s not found", functionName, policy)
+		log.Infof("[policy] function %s with policy %s not found", functionName, policy)
 
 		deployment, ok := providerLookup.GetFunction(functionName)
 		if !ok {
-			log.Errorf("error for provider resolving function %s.", functionName)
-			return "", errors.New("error for provider resolving function: " + functionName)
+			log.Errorf("[policy] error for provider resolving function %s.", functionName)
+			return "", errors.New("[policy] error for provider resolving function: " + functionName)
 		}
 
 		url, err := providerLookup.Resolve(functionName)
 		if err != nil {
-			log.Errorf("error for provider resolving function %s.", functionName)
+			log.Errorf("[policy] error for provider resolving function %s.", functionName)
 			return "", err
 		}
 
-		log.Infof("deployment %s found", deployment.Service)
+		log.Infof("[policy] deployment %s found", deployment.Service)
 		deployment, policyFunction := policyController.BuildDeployment(&types.PolicyFunction{Policy: policy}, deployment)
 		depErr := policyDeploy(w, r, url, deployment)
 		if depErr != nil {
-			log.Errorf("polic deploy failed for %s with %s.", deployment.Service, depErr)
+			log.Errorf("[policy] policy deploy failed for %s with %s.", deployment.Service, depErr)
 			return "", depErr
 		}
 		policyController.AddPolicyFunction(functionName, *policyFunction)
@@ -154,11 +154,11 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 	client := &http.Client{}
 	resp, err := client.Do(upstreamReq.WithContext(ctx))
 	if err != nil {
-		log.Printf("error with policy deploy request to: %s, %s\n", upstreamReq.URL.String(), err.Error())
+		log.Printf("[policy] error with policy deploy request to: %s, %s\n", upstreamReq.URL.String(), err.Error())
 		return err
 	}
 
-	log.Info("response Status: ", resp.Status)
+	log.Info("[policy] response Status: ", resp.Status)
 	defer resp.Body.Close()
 
 	// poll for deployed function
@@ -172,10 +172,10 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 
 	start := time.Now()
 	for {
-		log.Info("polling for newly deployed function: " + pollReq.URL.String())
+		log.Info("[policy] polling for newly deployed function: " + pollReq.URL.String())
 		resp, err := client.Do(pollReq.WithContext(ctx))
 		if err != nil {
-			log.Printf("error plling after policy deploy request to: %s, %s\n", pollReq.URL.String(), err.Error())
+			log.Printf("[policy] error plling after policy deploy request to: %s, %s\n", pollReq.URL.String(), err.Error())
 			return err
 		}
 		if resp.StatusCode == 200 {
@@ -184,7 +184,7 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 		time.Sleep(time.Second)
 	}
 	elapsed := time.Since(start)
-	log.Infof("PERFORMANCE: polling took %s", elapsed)
+	log.Infof("[policy] PERFORMANCE: polling took %s", elapsed)
 	return nil
 }
 
