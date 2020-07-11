@@ -128,15 +128,15 @@ func (p *PolicyStore) BuildDeployment(function *PolicyFunction,
 		return deployment, function
 }
 
-func (p *PolicyStore) ReloadFromCache(functions []*fTypes.FunctionDeployment) {	
-	log.Info("reload policy cache ...") 
+func (p *PolicyStore) ReloadFromCache(functions []*fTypes.FunctionDeployment) {
+	log.Info("reload policy cache ...")
 	for _, f := range functions {
-		
+
 		if *f.Annotations == nil {
 			log.Infof("no annotations found for %s", f.Service) 
 			return
 		}
-				
+		
 		if fPolicy, ok := (*f.Annotations)["policy"]; ok {
 			if _, ok := p.policies[fPolicy]; ok {
 				parent_name, ok := (*f.Annotations)["parent_function"]
@@ -150,21 +150,34 @@ func (p *PolicyStore) ReloadFromCache(functions []*fTypes.FunctionDeployment) {
 }
 
 func (p *PolicyStore) DeleteFunction(f *fTypes.FunctionDeployment) {
+	log.Infof("Attemtping to delete %s from policy cache", f.Service) 
+	if *f.Annotations == nil {
+		log.Infof("no annotations found for %s", f.Service) 
+		return
+	}
+
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	log.Infof("attempting to delete function from policy cache: %s", f.Service) 
-	
-	if parent_name, ok := (*f.Annotations)["parent_function"]; ok {
-		if i, name, err := p.GetPolicyFunction(parent_name, (*f.Annotations)["policy"]); err == nil {
-			log.Infof("delete function from policy cache: lookup for %s with %s", parent_name, f.Service) 
-			p.lookUp[name] = append(p.lookUp[name][:i], p.lookUp[name][i+1:]...) // delete
-		}
-	} else {
-		if len(p.lookUp[f.Service]) == 0 {
-			log.Infof("no policies for %s remaining", f.Service) 
-			log.Infof("delete parent function  %s from policy cache", f.Service) 
-			delete(p.lookUp, f.Service)
-		}
+	if _, ok := p.lookUp[f.Service]; !ok {
+		log.Warnf("no function found for %s", f.Service) 
+		return
 	}
+
+	parent_name, ok := (*f.Annotations)["parent_function"]; if !ok {
+		log.Warnf("no parent_function found for %s", f.Service) 
+		return
+	}
+	policy, ok := (*f.Annotations)["policy"]; if !ok {
+		log.Warnf("no policy found for %s", f.Service) 
+		return
+	}
+
+	if i, name, err := p.GetPolicyFunction(parent_name, policy); err == nil {
+		log.Infof("delete function from policy cache: lookup for %s with %s", parent_name, f.Service) 
+		p.lookUp[name] = append(p.lookUp[name][:i], p.lookUp[name][i+1:]...) // delete
+		return
+	}
+
+	log.Infof("Not able to delete %s from policy cache %s", parent_name, policy)	
 }
