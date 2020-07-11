@@ -162,6 +162,9 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 	defer resp.Body.Close()		
 
 	// poll for deployed function	
+	q := baseURL.Query()
+  q.Del("policy")
+  baseURL.RawQuery = q.Encode()
 	pollReq, err := buildProxyRequest(originalReq, *baseURL, "/function/" + deployment.Service)
 	if err != nil {
 		return err
