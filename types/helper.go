@@ -9,3 +9,9 @@ func StringInSlice(a string, list []string) bool {
 	}
 	return false
 }
+
+func MergeMap(a map[string]string, b map[string]string) {
+	for k, v := range b {
+    a[k] = v
+	}
+}
