@@ -10,21 +10,16 @@ import (
 )
 
 type Policy struct {
-	Name                   string             `yaml:"name"`
-	EnvVars                *map[string]string `yaml:"environment"`
-	Constraints            *[]string          `yaml:"constraints"`
-	Secrets                *[]string          `yaml:"secrets"`
-	Labels                 *map[string]string `yaml:"labels"`
-	Annotations            *map[string]string `yaml:"annotations"`
-	Limits                 *FunctionResources `yaml:"limits"`
-	Requests               *FunctionResources `yaml:"requests"`
-	ReadOnlyRootFilesystem *bool              `yaml:"readOnlyRootFilesystem"`
-	Namespace              *string            `yaml:"namespace,omitempty"`
-}
-
-type FunctionResources struct {
-	Memory string `yaml:"memory"`
-	CPU    string `yaml:"cpu"`
+	Name                   string                    `yaml:"name"`
+	EnvVars                *map[string]string        `yaml:"environment"`
+	Constraints            *[]string                 `yaml:"constraints"`
+	Secrets                *[]string                 `yaml:"secrets"`
+	Labels                 *map[string]string        `yaml:"labels"`
+	Annotations            *map[string]string        `yaml:"annotations"`
+	Limits                 *fTypes.FunctionResources `yaml:"limits"`
+	Requests               *fTypes.FunctionResources `yaml:"requests"`
+	ReadOnlyRootFilesystem *bool                     `yaml:"readOnlyRootFilesystem"`
+	Namespace              *string                   `yaml:"namespace,omitempty"`
 }
 
 type PolicyFunction struct {
@@ -112,18 +107,64 @@ func (p *PolicyStore) GetPolicy(policyName string) (Policy, bool) {
 
 func (p *PolicyStore) BuildDeployment(function *PolicyFunction,
 	deployment *fTypes.FunctionDeployment) (*fTypes.FunctionDeployment, *PolicyFunction) {
-	name := deployment.Service + function.Policy
+	name := deployment.Service + "-" + function.Policy
 
-	if *(deployment.Annotations) == nil {
-		*(deployment.Annotations) = *new(map[string]string)
+	if deployment.Annotations == nil {
+		deployment.Annotations = new(map[string]string)
 	}
 
+	policy, _ := p.GetPolicy(function.Policy) // TODO: Error Handling
+
+	log.Info(1)
+	if policy.Annotations != nil {
+		MergeMap(*deployment.Annotations, *policy.Annotations)
+	}
+	log.Info(2)
+	if policy.EnvVars != nil {
+		MergeMap(deployment.EnvVars, *policy.EnvVars)
+	}
+	log.Info(3)
+	if policy.Labels != nil {
+		if deployment.Labels == nil {
+			deployment.Labels = policy.Labels
+		} else {
+			MergeMap(*deployment.Labels, *policy.Labels)
+		}
+	}
+	log.Info(4)
+	if policy.Constraints != nil {
+		deployment.Constraints = append(deployment.Constraints, *policy.Constraints...)
+	}
+	log.Info(5)
+	if policy.Secrets != nil {
+		deployment.Secrets = append(deployment.Secrets, *policy.Secrets...)
+	}
+	log.Info(6)
+	if policy.Limits != nil {
+		deployment.Limits = policy.Limits
+	}
+	log.Info(7)
+	if policy.Requests != nil {
+		deployment.Requests = policy.Requests
+	}
+	log.Info(8)
+	if policy.ReadOnlyRootFilesystem != nil {
+		deployment.ReadOnlyRootFilesystem = *policy.ReadOnlyRootFilesystem
+	}
+	log.Info(9)
+	if policy.Namespace != nil {
+		deployment.Namespace = *policy.Namespace
+	}
+
+	// Keep these last to override any illegal statements
 	(*deployment.Annotations)["policy"] = function.Policy
 	(*deployment.Annotations)["parent_function"] = deployment.Service
 	(*deployment.Labels)["faas_function"] = name
 
 	function.InternalName = name
 	deployment.Service = name
+
+	log.Info(deployment)
 
 	return deployment, function
 }
