@@ -145,6 +145,7 @@ func (d *defaultProviderRouting) AddFunction(f *types.FunctionDeployment) {
 }
 
 func (d *defaultProviderRouting) GetFunction(name string) (*types.FunctionDeployment, bool) {
+	log.Infof("provider get function %s", name)
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	v, ok := d.cache[name]
