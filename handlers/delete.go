@@ -9,6 +9,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/PEng2020-Subject3/faas-policy-provider/types"
+	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
+
 	"github.com/gorilla/mux"
 
 	"github.com/openfaas/faas/gateway/requests"
@@ -16,7 +19,7 @@ import (
 )
 
 // MakeDeleteHandler delete a function
-func MakeDeleteHandler(proxy http.HandlerFunc) http.HandlerFunc {
+func MakeDeleteHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLookup, policyController types.PolicyController) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("delete request")
 		defer r.Body.Close()
@@ -45,8 +48,14 @@ func MakeDeleteHandler(proxy http.HandlerFunc) http.HandlerFunc {
 
 		pathVars["name"] = f.FunctionName
 		pathVars["params"] = r.URL.Path
+
 		proxy.ServeHTTP(w, r)
 
+		if function, ok := providerLookup.GetFunction(f.FunctionName); ok {
+			policyController.DeleteFunction(function)
+		}
+
 		log.Infof("delete request %s successful", f.FunctionName)
+
 	}
 }

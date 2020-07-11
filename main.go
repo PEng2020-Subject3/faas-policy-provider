@@ -84,10 +84,11 @@ func main() {
 	
 	policyStore := types.NewPolicyStore()
 	policyStore.AddPolicies(out)
+	policyStore.ReloadFromCache(providerLookup.GetFunctions())
 	
 	bootstrapHandlers := bootTypes.FaaSHandlers{
 		FunctionProxy:  handlers.MakeProxyHandler(proxyFunc, providerLookup, policyStore),
-		DeleteHandler:  handlers.MakeDeleteHandler(proxyFunc),
+		DeleteHandler:  handlers.MakeDeleteHandler(proxyFunc, providerLookup, policyStore),
 		DeployHandler:  handlers.MakeDeployHandler(proxyFunc, providerLookup, policyStore),
 		FunctionReader: handlers.MakeFunctionReader(cfg.Providers),
 		ReplicaReader:  handlers.MakeReplicaReader(),

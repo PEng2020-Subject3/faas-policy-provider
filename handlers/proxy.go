@@ -50,8 +50,8 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 		policy, ok := query["policy"]
 		if ok && len(policy) == 1 {
 			policyName := policy[0]
-			log.Info("request for function: " + functionName)
-			log.Info("request for policy: " + policyName)
+			log.Infof("request for function: %s", functionName)
+			log.Infof("request for policy: %s", policyName)
 
 			if _, ok := policyController.GetPolicy(policyName); !ok {
 				log.Infof("error during function request. Policy %s not found", policyName)
@@ -96,35 +96,39 @@ type FunctionLookup struct {
 func policyProxy(w http.ResponseWriter, r *http.Request, functionName string, policy string, 
 	providerLookup routing.ProviderLookup, policyController types.PolicyController) (string, error) {
 
-	policyFunctionName, err := policyController.GetPolicyFunction(functionName, policy)
+	log.Infof("resolve policy function %s", functionName)
+	_, policyFunctionName, err := policyController.GetPolicyFunction(functionName, policy)
 	if err != nil {
 		err, ok := err.(types.FunctionError)
 		if ok {
-			log.Errorln("error during function request. ", err.Error())
+			log.Errorf("error during function request for %s.", functionName)
 			return "", err
 
 		} else {
-			log.Info("function found but not policy. ", err.(types.PolicyError).Error()) 
+			log.Infof("function %s found but not policy %s.", functionName, policy) 
 
-			policyFunction := types.PolicyFunction{functionName, policy}
+			policyFunction := &types.PolicyFunction{functionName, policy}
 			deployment, ok := providerLookup.GetFunction(functionName)					
 			if !ok {
-				log.Errorln("error for provider resolving function.")
-				return "", errors.New("error for provider resolving function.")
+				log.Errorf("error for provider resolving function %s.", functionName)
+				return "", errors.New("error for provider resolving function: " + functionName)
 			}
 
 			url, err := providerLookup.Resolve(functionName)
 			if err != nil {
+				log.Errorf("error for provider resolving function %s.", functionName)
 				return "", err
 			}
 
-			*deployment = policyController.BuildDeploymentForPolicy(policyFunction, deployment)	
+			log.Infof("deployment %s found", deployment.Service)
+			deployment, policyFunction = policyController.BuildDeployment(policyFunction, deployment)	
 			depErr := policyDeploy(w, r, url, deployment)
 			if depErr != nil {
+				log.Errorf("polic deploy failed for %s with %s.", deployment.Service, depErr)
 				return "", depErr
 			}
-			policyController.AddPolicyFunction(functionName, policyFunction)
-			providerLookup.AddFunction(deployment)
+			policyController.AddPolicyFunction(functionName, *policyFunction)
+			//providerLookup.AddFunction(deployment)
 			policyFunctionName = deployment.Service
 		}
 	}

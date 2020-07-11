@@ -31,11 +31,6 @@ func MakeDeployHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLo
 			return
 		}
 
-		policyController.AddPolicyFunction(function.Service, 
-			ptypes.PolicyFunction{
-				InternalName: function.Service,
-			})
-
 		proxyDeployment(proxy, function, w, r)
 
 		log.Infof("deployment request for function %s path %s", function.Service, r.URL.String())
