@@ -113,6 +113,48 @@ func (p *PolicyStore) BuildDeployment(function *PolicyFunction,
 			deployment.Annotations = new(map[string]string)
 		}		
 
+		policy, _ := p.GetPolicy(function.Policy) // TODO: Error Handling
+		
+		log.Info(1)
+		if policy.Annotations != nil {
+			MergeMap(*deployment.Annotations, *policy.Annotations)
+		}	
+		log.Info(2)
+		if policy.EnvVars != nil {
+			MergeMap(deployment.EnvVars, *policy.EnvVars)
+		}
+		log.Info(3)
+		if policy.Labels != nil {
+			if deployment.Labels == nil {
+				deployment.Labels = policy.Labels
+			} else {
+				MergeMap(*deployment.Labels, *policy.Labels)
+			}	
+		}	
+		log.Info(4)
+		if policy.Constraints != nil {
+			deployment.Constraints = append(deployment.Constraints, *policy.Constraints...)		
+		}	
+		log.Info(5)
+		if policy.Secrets != nil {
+			deployment.Secrets = append(deployment.Secrets, *policy.Secrets...)		
+		}	
+		log.Info(6)
+		if policy.Limits != nil {
+			deployment.Limits = policy.Limits
+		}
+		log.Info(7)
+		if policy.Requests != nil {
+			deployment.Requests = policy.Requests
+		}
+		log.Info(8)
+		if policy.ReadOnlyRootFilesystem != nil {
+			deployment.ReadOnlyRootFilesystem = *policy.ReadOnlyRootFilesystem
+		}
+		log.Info(9)
+		if policy.Namespace != nil {
+			deployment.Namespace = *policy.Namespace
+		}
 
 		// Keep these last to override any illegal statements
 		(*deployment.Annotations)["policy"] = function.Policy
