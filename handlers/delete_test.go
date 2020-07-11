@@ -9,6 +9,7 @@ import (
 
 	"github.com/PEng2020-Subject3/faas-policy-provider/routing"
 	acc "github.com/PEng2020-Subject3/faas-policy-provider/testing"
+	policy "github.com/PEng2020-Subject3/faas-policy-provider/types"
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/proxy"
 	"github.com/openfaas/faas-provider/types"
@@ -34,11 +35,11 @@ func Test_Delete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reloading provider cache. %v", err)
 	}
-
+	policyStore := new(policy.PolicyStore)
 	config := types.FaaSConfig{ReadTimeout: time.Minute * 1}
 	proxyFunc := proxy.NewHandlerFunc(config, NewFunctionLookup(providerLookup))
 
-	MakeDeleteHandler(proxyFunc).ServeHTTP(rr, req)
+	MakeDeleteHandler(proxyFunc, providerLookup, policyStore).ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)

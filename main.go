@@ -11,9 +11,11 @@ import (
 	"github.com/PEng2020-Subject3/faas-policy-provider/version"
 	bootstrap "github.com/openfaas/faas-provider"
 	"github.com/openfaas/faas-provider/proxy"
+	b64 "encoding/base64"
 
 	bootTypes "github.com/openfaas/faas-provider/types"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -62,10 +64,34 @@ func main() {
 	proxyFunc := proxy.NewHandlerFunc(cfg.FaaSConfig,
 		handlers.NewFunctionLookup(providerLookup))
 
+	/*data := `
+  - name: gdpr
+    constraints:
+        - "topology.kubernetes.io/region=us-east-1"
+  - name: restricted
+    readonly_root_filesystem: true
+    environment:
+        http_proxy: http://proxy1.corp.com:3128
+    constraints:
+        - "privacy-level:3"
+        - "node.kubernetes.io/instance-type=m3.medium"`*/
+
+	var out []types.Policy
+	sDec, _ := b64.StdEncoding.DecodeString(osEnv.Getenv("policies"))
+	err = yaml.Unmarshal([]byte(sDec), &out)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	log.Infof("--- t:\n%v\n\n", out)
+	
+	policyStore := types.NewPolicyStore()
+	policyStore.AddPolicies(out)
+	policyStore.ReloadFromCache(providerLookup.GetFunctions())
+	
 	bootstrapHandlers := bootTypes.FaaSHandlers{
-		FunctionProxy:  handlers.MakeProxyHandler(proxyFunc),
-		DeleteHandler:  handlers.MakeDeleteHandler(proxyFunc),
-		DeployHandler:  handlers.MakeDeployHandler(proxyFunc, providerLookup),
+		FunctionProxy:  handlers.MakeProxyHandler(proxyFunc, providerLookup, policyStore),
+		DeleteHandler:  handlers.MakeDeleteHandler(proxyFunc, providerLookup, policyStore),
+		DeployHandler:  handlers.MakeDeployHandler(proxyFunc, providerLookup, policyStore),
 		FunctionReader: handlers.MakeFunctionReader(cfg.Providers),
 		ReplicaReader:  handlers.MakeReplicaReader(),
 		ReplicaUpdater: handlers.MakeReplicaUpdater(),
