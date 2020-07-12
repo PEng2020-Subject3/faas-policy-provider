@@ -17,7 +17,7 @@ import (
 func MakeFunctionReader(providers []string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		log.Info("read request")
+		//log.Info("read request")
 
 		functions, err := routing.ReadServices(providers)
 		if err != nil {
