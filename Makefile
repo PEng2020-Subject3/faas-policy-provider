@@ -1,7 +1,7 @@
 GO_FILES?=$$(find . -name '*.go' |grep -v vendor)
-TAG?=latest
+TAG?=stendler-$$(git rev-parse --verify HEAD --short)
 SQUASH?=false
-VERSION?=0.1.4
+VERSION?=0.1.5
 
 default: lint vet build test
 
