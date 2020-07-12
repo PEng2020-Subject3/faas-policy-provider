@@ -185,13 +185,19 @@ func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftype
 
 	start := time.Now()
 	for {
+		time.Sleep(time.Second)
 		log.Debug("[policy] polling for newly deployed function: " + pollReq.URL.String())
 		resp, err := client.Do(pollReq.WithContext(ctx))
 		if err != nil {
 			log.Printf("[policy] error polling after policy deploy request to: %s, %s\n", pollReq.URL.String(), err.Error())
 			return err
 		}
-		log.Debugf("[policy] polling for newly deployed function: %s", resp.Status)
+		log.Debugf("[policy] polling provider response status: %s", resp.Status)
+
+		// function is not yet known to underlying provider. Wait a bit
+		if resp.StatusCode != http.StatusOK {
+			continue
+		}
 
 		defer resp.Body.Close()
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -208,7 +214,6 @@ func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftype
 			return err
 		}
 		log.Debug(systemResponse.X)
-		time.Sleep(time.Second)
 	}
 	elapsed := time.Since(start)
 	log.Debugf("[policy] PERFORMANCE: polling took %s", elapsed)
