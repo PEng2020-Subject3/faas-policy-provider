@@ -48,7 +48,7 @@ faasfederation:
   readTimeout : "60s"
   writeTimeout : "60s"
   imagePullPolicy : "Always"    # Image pull policy for deployed functions
-  httpProbe: true              # Setting to true will use a lock file for readiness and liveness (incompatible with Istio)
+  httpProbe: true               # Setting to true will use a lock file for readiness and liveness (incompatible with Istio)
   readinessProbe:
     initialDelaySeconds: 0
     timeoutSeconds: 1           # Tuned-in to run checks early and quickly to support fast cold-start from zero replicas
@@ -63,6 +63,7 @@ faasfederation:
   - name: gdpr
     constraints:
         - "topology.kubernetes.io/region=us-east-1"
+  - name: test                  # Only for testing purposes!
   - name: restricted
     readonly_root_filesystem: true
     environment:

@@ -175,7 +175,7 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 		log.Debug("[policy] polling for newly deployed function: " + pollReq.URL.String())
 		resp, err := client.Do(pollReq.WithContext(ctx))
 		if err != nil {
-			log.Printf("[policy] error plling after policy deploy request to: %s, %s\n", pollReq.URL.String(), err.Error())
+			log.Printf("[policy] error polling after policy deploy request to: %s, %s\n", pollReq.URL.String(), err.Error())
 			return err
 		}
 		if resp.StatusCode == 200 {
@@ -183,6 +183,11 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 		}
 		time.Sleep(time.Second)
 	}
+
+	if resp != 200{
+		log.Printf("[policy] error! Please check if policy requirements can be met at all!\n")
+	}
+	
 	elapsed := time.Since(start)
 	log.Debugf("[policy] PERFORMANCE: polling took %s", elapsed)
 	return nil
