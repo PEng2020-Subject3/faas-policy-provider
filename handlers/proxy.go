@@ -176,7 +176,7 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 		resp, err := client.Do(pollReq.WithContext(ctx))
 		if err != nil {
 			if resp.StatusCode != 200 {
-				log.Printf("[policy] error! Please check if policy requirements can be met at all! Error Code\n")
+				log.Printf("[policy] error! Please check if policy requirements can be met at all! Error Code: %b\n", resp.StatusCode)
 				return err
 			} else {
 				log.Printf("[policy] error polling after policy deploy request to: %s, %s\n", pollReq.URL.String(), err.Error())

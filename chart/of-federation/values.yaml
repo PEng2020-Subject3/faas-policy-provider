@@ -43,7 +43,7 @@ faasnetes:
       cpu: "50m"
 
 faasfederation:
-  image: gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:0.1.4-flo-7
+  image: gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:0.1.4-flo-8
   replicas: 1
   readTimeout : "30s"
   writeTimeout : "30s"
