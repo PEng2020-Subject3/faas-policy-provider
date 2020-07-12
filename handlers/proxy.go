@@ -147,7 +147,7 @@ func policyProxy(r http.Request, functionName string, policy string,
 func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftypes.FunctionDeployment) error {
 	ctx := originalReq.Context()
 
-	json, err := json.Marshal(deployment)
+	deploymentJson, err := json.Marshal(deployment)
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftype
 	}
 
 	upstreamReq.Method = "POST"
-	upstreamReq.Body = ioutil.NopCloser(bytes.NewReader(json))
+	upstreamReq.Body = ioutil.NopCloser(bytes.NewReader(deploymentJson))
 	upstreamReq.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
 	client := &http.Client{}
@@ -173,9 +173,14 @@ func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftype
 
 	// poll for deployed function
 	*originalReq.URL = deleteQuery("policy", *originalReq.URL)
-	pollReq, err := buildProxyRequest(originalReq, *baseURL, "/function/"+deployment.Service)
+	pollReq, err := buildProxyRequest(originalReq, *baseURL, "/system/function/"+deployment.Service)
 	if err != nil {
 		return err
+	}
+
+	type SystemResponse struct {
+		AvailableReplicas int                    `json:"availableReplicas"`
+		X                 map[string]interface{} `json:"-"`
 	}
 
 	start := time.Now()
@@ -187,9 +192,17 @@ func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftype
 			return err
 		}
 		log.Debugf("[policy] polling for newly deployed function: %s", resp.Status)
-		if resp.StatusCode == 200 {
+
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		var systemResponse SystemResponse
+		if err := json.Unmarshal(body, &systemResponse); err != nil {
+			log.Error("[policy] error unmarshalling response from provider")
+		}
+		if systemResponse.AvailableReplicas > 0 {
 			break
 		}
+		log.Debug(systemResponse)
 		time.Sleep(time.Second)
 	}
 	elapsed := time.Since(start)
