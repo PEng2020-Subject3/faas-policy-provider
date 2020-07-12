@@ -42,6 +42,8 @@ func init() {
 }
 
 func main() {
+	// enable debug logging for now
+	log.SetLevel(log.DebugLevel)
 
 	log.Infof("faas-policy-provider version: %s. Last commit message: %s, commit SHA: %s", version.BuildVersion(), version.GitCommitMessage, version.GitCommitSHA)
 

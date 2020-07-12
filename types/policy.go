@@ -115,15 +115,15 @@ func (p *PolicyStore) BuildDeployment(function *PolicyFunction,
 
 	policy, _ := p.GetPolicy(function.Policy) // TODO: Error Handling
 
-	log.Info(1)
+	log.Debug("[policy] Merge annotations")
 	if policy.Annotations != nil {
 		MergeMap(*deployment.Annotations, *policy.Annotations)
 	}
-	log.Info(2)
+	log.Debug("[policy] Merge Environment")
 	if policy.EnvVars != nil {
 		MergeMap(deployment.EnvVars, *policy.EnvVars)
 	}
-	log.Info(3)
+	log.Debug("[policy] Merge labels")
 	if policy.Labels != nil {
 		if deployment.Labels == nil {
 			deployment.Labels = policy.Labels
@@ -131,27 +131,27 @@ func (p *PolicyStore) BuildDeployment(function *PolicyFunction,
 			MergeMap(*deployment.Labels, *policy.Labels)
 		}
 	}
-	log.Info(4)
+	log.Debug("[policy] append constraints")
 	if policy.Constraints != nil {
 		deployment.Constraints = append(deployment.Constraints, *policy.Constraints...)
 	}
-	log.Info(5)
+	log.Debug("[policy] append secrets")
 	if policy.Secrets != nil {
 		deployment.Secrets = append(deployment.Secrets, *policy.Secrets...)
 	}
-	log.Info(6)
+	log.Debug("[policy] overwrite limits")
 	if policy.Limits != nil {
 		deployment.Limits = policy.Limits
 	}
-	log.Info(7)
+	log.Debug("[policy] overwrite requests")
 	if policy.Requests != nil {
 		deployment.Requests = policy.Requests
 	}
-	log.Info(8)
+	log.Debug("[policy] overwrite ready only root filesystem definition")
 	if policy.ReadOnlyRootFilesystem != nil {
 		deployment.ReadOnlyRootFilesystem = *policy.ReadOnlyRootFilesystem
 	}
-	log.Info(9)
+	log.Debug("[policy] overwrite namespace")
 	if policy.Namespace != nil {
 		deployment.Namespace = *policy.Namespace
 	}
@@ -164,7 +164,7 @@ func (p *PolicyStore) BuildDeployment(function *PolicyFunction,
 	function.InternalName = name
 	deployment.Service = name
 
-	log.Info(deployment)
+	log.Debug(deployment)
 
 	return deployment, function
 }
@@ -187,11 +187,11 @@ func (p *PolicyStore) ReloadFromCache(functions []*fTypes.FunctionDeployment) {
 			}
 		}
 	}
-	log.Info("[policy] policy cache reloaded succesfully")
+	log.Info("[policy] policy cache reloaded successfully")
 }
 
 func (p *PolicyStore) DeleteFunction(f *fTypes.FunctionDeployment) {
-	log.Infof("[policy] Attemtping to delete %s from policy cache", f.Service)
+	log.Infof("[policy] Attempting to delete %s from policy cache", f.Service)
 	if *f.Annotations == nil {
 		log.Infof("[policy] no annotations found for %s", f.Service)
 		return
