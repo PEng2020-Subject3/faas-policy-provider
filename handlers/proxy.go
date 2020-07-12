@@ -198,12 +198,14 @@ func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftype
 		var systemResponse SystemResponse
 		if err := json.Unmarshal(body, &systemResponse); err != nil {
 			log.Error("[policy] error unmarshalling response from provider")
+			return err
 		}
 		if systemResponse.AvailableReplicas > 0 {
 			break
 		}
 		if err := json.Unmarshal(body, &systemResponse.X); err != nil {
 			log.Error("[policy] error unmarshalling response from provider")
+			return err
 		}
 		log.Debug(systemResponse.X)
 		time.Sleep(time.Second)
