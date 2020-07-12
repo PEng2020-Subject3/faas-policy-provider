@@ -179,8 +179,8 @@ func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftype
 	}
 
 	type SystemResponse struct {
-		AvailableReplicas int                    `json:"availableReplicas"`
-		X                 map[string]interface{} `json:"-"`
+		AvailableReplicas int         `json:"availableReplicas"`
+		X                 interface{} `json:"-"`
 	}
 
 	start := time.Now()
@@ -202,7 +202,10 @@ func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftype
 		if systemResponse.AvailableReplicas > 0 {
 			break
 		}
-		log.Debug(systemResponse)
+		if err := json.Unmarshal(body, &systemResponse.X); err != nil {
+			log.Error("[policy] error unmarshalling response from provider")
+		}
+		log.Debug(systemResponse.X)
 		time.Sleep(time.Second)
 	}
 	elapsed := time.Since(start)
