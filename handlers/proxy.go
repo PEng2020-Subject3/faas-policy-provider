@@ -32,6 +32,7 @@ const (
 // MakeProxyHandler creates a handler to invoke functions downstream
 func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLookup, policyController types.PolicyController) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
 
 		log.Info("proxy request")
 
@@ -44,12 +45,18 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 		functionName := strings.Split(r.URL.Path, "/")[2]
 		oldFunctionName := functionName
 
+		log.Debugf("[policy] Read old body...")
+		if r.Body != nil {
+			oldBody := r.Body
+			log.Info(oldBody)
+		}
+
 		// Policy Management
 		query := r.URL.Query()
+
 		policy, ok := query["policy"]
 		if ok && len(policy) == 1 {
 			policyName := policy[0]
-			*r.URL = deleteQuery("policy", *r.URL)
 			log.Debugf("[policy] request for function: %s", functionName)
 			log.Debugf("[policy] request for policy: %s", policyName)
 
@@ -59,7 +66,7 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 				return
 			}
 
-			policyFunctionName, err := policyProxy(w, r, functionName, policyName,
+			policyFunctionName, err := policyProxy(*r, functionName, policyName,
 				providerLookup, policyController)
 
 			if err != nil {
@@ -76,6 +83,7 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 
 		pathVars["name"] = functionName
 		pathVars["params"] = strings.Replace(r.URL.Path, oldFunctionName, functionName, -1)
+
 		proxy.ServeHTTP(w, r)
 
 		log.Debugf("proxy request for function %s path %s", functionName, r.URL.String())
@@ -93,7 +101,7 @@ type FunctionLookup struct {
 	providerLookup routing.ProviderLookup
 }
 
-func policyProxy(w http.ResponseWriter, r *http.Request, functionName string, policy string,
+func policyProxy(r http.Request, functionName string, policy string,
 	providerLookup routing.ProviderLookup, policyController types.PolicyController) (string, error) {
 
 	log.Infof("[policy] resolve policy function %s", functionName)
@@ -114,28 +122,21 @@ func policyProxy(w http.ResponseWriter, r *http.Request, functionName string, po
 		}
 
 		log.Debugf("[policy] deployment %s found", deployment.Service)
-		if deployment.Annotations != nil {
-			if policy, ok := (*deployment.Annotations)["policy"]; ok {
-				log.Infof("[policy] policy function %s already has the policy %s: abort deployment", policyFunctionName, policy)
-				return deployment.Service, nil
-			}
-		}
-
 		deployment, policyFunction := policyController.BuildDeployment(&types.PolicyFunction{Policy: policy}, deployment)
-		depErr := policyDeploy(w, r, url, deployment)
+		depErr := policyDeploy(&r, url, deployment)
 		if depErr != nil {
 			log.Errorf("[policy] policy deploy failed for %s with %s.", deployment.Service, depErr)
 			return "", depErr
 		}
 		policyController.AddPolicyFunction(functionName, *policyFunction)
-		//providerLookup.AddFunction(deployment)
+		providerLookup.AddFunction(deployment)
 		policyFunctionName = deployment.Service
 
 	}
 	return policyFunctionName, nil
 }
 
-func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url.URL, deployment *ftypes.FunctionDeployment) error {
+func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftypes.FunctionDeployment) error {
 	ctx := originalReq.Context()
 
 	json, err := json.Marshal(deployment)
@@ -147,14 +148,10 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 	if err != nil {
 		return err
 	}
-	if upstreamReq.Body != nil {
-		defer upstreamReq.Body.Close()
-	}
 
 	upstreamReq.Method = "POST"
 	upstreamReq.Body = ioutil.NopCloser(bytes.NewReader(json))
 	upstreamReq.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	log.Info(upstreamReq)
 
 	client := &http.Client{}
 	resp, err := client.Do(upstreamReq.WithContext(ctx))
@@ -167,7 +164,9 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 	defer resp.Body.Close()
 
 	// poll for deployed function
-	*originalReq.URL = deleteQuery("policy", *originalReq.URL)
+	q := originalReq.URL.Query()
+	q.Del("policy")
+	originalReq.URL.RawQuery = q.Encode()
 	pollReq, err := buildProxyRequest(originalReq, *baseURL, "/function/"+deployment.Service)
 	if err != nil {
 		return err
@@ -178,9 +177,10 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 		log.Debug("[policy] polling for newly deployed function: " + pollReq.URL.String())
 		resp, err := client.Do(pollReq.WithContext(ctx))
 		if err != nil {
-			log.Printf("[policy] error plling after policy deploy request to: %s, %s\n", pollReq.URL.String(), err.Error())
+			log.Printf("[policy] error polling after policy deploy request to: %s, %s\n", pollReq.URL.String(), err.Error())
 			return err
 		}
+		log.Debugf("[policy] polling for newly deployed function: %s", resp.Status)
 		if resp.StatusCode == 200 {
 			break
 		}
@@ -273,10 +273,6 @@ func buildProxyRequest(originalReq *http.Request, baseURL url.URL, extraPath str
 		upstreamReq.Header["X-Forwarded-For"] = []string{originalReq.RemoteAddr}
 	}
 
-	if originalReq.Body != nil {
-		upstreamReq.Body = originalReq.Body
-	}
-
 	return upstreamReq, nil
 }
 
@@ -303,11 +299,4 @@ func getContentType(request http.Header, proxyResponse http.Header) (headerConte
 	}
 
 	return headerContentType
-}
-
-func deleteQuery(query string, url url.URL) url.URL {
-	q := url.Query()
-	q.Del(query)
-	url.RawQuery = q.Encode()
-	return url
 }
