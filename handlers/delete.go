@@ -53,6 +53,7 @@ func MakeDeleteHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLo
 
 		if function, ok := providerLookup.GetFunction(f.FunctionName); ok {
 			policyController.DeleteFunction(function)
+			providerLookup.DeleteFunction(f.FunctionName)
 		}
 
 		log.Infof("delete request %s successful", f.FunctionName)

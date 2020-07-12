@@ -18,6 +18,7 @@ type ProviderLookup interface {
 	Resolve(functionName string) (providerURI *url.URL, err error)
 	AddFunction(f *types.FunctionDeployment)
 	GetFunction(name string) (*types.FunctionDeployment, bool)
+	DeleteFunction(name string)
 	GetFunctions() []*types.FunctionDeployment
 	ReloadCache() error
 }
@@ -142,6 +143,13 @@ func (d *defaultProviderRouting) AddFunction(f *types.FunctionDeployment) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.cache[f.Service] = f
+}
+
+func (d *defaultProviderRouting) DeleteFunction(name string) {
+	log.Infof("provider delete function %s", name)
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	delete(d.cache, name)
 }
 
 func (d *defaultProviderRouting) GetFunction(name string) (*types.FunctionDeployment, bool) {
