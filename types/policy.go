@@ -121,7 +121,11 @@ func (p *PolicyStore) BuildDeployment(function *PolicyFunction,
 	}
 	log.Debug("[policy] Merge Environment")
 	if policy.EnvVars != nil {
-		MergeMap(deployment.EnvVars, *policy.EnvVars)
+		if deployment.EnvVars == nil {
+			deployment.EnvVars = *(policy.EnvVars)
+		} else {
+			MergeMap(deployment.EnvVars, *policy.EnvVars)
+		}
 	}
 	log.Debug("[policy] Merge labels")
 	if policy.Labels != nil {
