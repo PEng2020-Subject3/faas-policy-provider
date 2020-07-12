@@ -43,10 +43,10 @@ faasnetes:
       cpu: "50m"
 
 faasfederation:
-  image: gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:latest
+  image: gitlab-registry.tubit.tu-berlin.de/stendler/faas-policy-provider:0.1.4-flo-7
   replicas: 1
-  readTimeout : "60s"
-  writeTimeout : "60s"
+  readTimeout : "30s"
+  writeTimeout : "30s"
   imagePullPolicy : "Always"    # Image pull policy for deployed functions
   httpProbe: true               # Setting to true will use a lock file for readiness and liveness (incompatible with Istio)
   readinessProbe:
