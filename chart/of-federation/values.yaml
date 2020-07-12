@@ -61,12 +61,17 @@ faasfederation:
   default_provider: "http://faasnetes.openfaas:8080"
   policies:
   - name: test
+    environment:
+      openfaas.policy.name: test
   - name: gdpr
+    environment:
+      openfaas.policy.name: gdpr
     constraints:
         - "failure-domain.beta.kubernetes.io/region=us-east-1"
   - name: restricted
     readonly_root_filesystem: true
     environment:
+      openfaas.policy.name: restricted
       db_host: usecase-db-restricted-postgresql
       db_password: ngvc8dXsVP
     constraints:
