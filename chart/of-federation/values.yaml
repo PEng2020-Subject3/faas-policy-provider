@@ -68,6 +68,7 @@ faasfederation:
       openfaas.policy.name: gdpr
     constraints:
         - "failure-domain.beta.kubernetes.io/region=us-east-1"
+        - "openfaas.policy/privacy-level=1"
   - name: restricted
     readonly_root_filesystem: true
     environment:
@@ -75,8 +76,7 @@ faasfederation:
       db_host: usecase-db-restricted-postgresql
       db_password: ngvc8dXsVP
     constraints:
-        - "openfaas.policy/privacy-level=3"
-        - "beta.kubernetes.io/instance-type=t3.medium"
+      - "openfaas.policy/privacy-level=3"
 
 faaslambda:
   create: false
