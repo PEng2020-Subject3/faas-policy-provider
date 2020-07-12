@@ -184,10 +184,10 @@ func policyDeploy(w http.ResponseWriter, originalReq *http.Request, baseURL *url
 		time.Sleep(time.Second)
 	}
 
-	if resp != 200{
+	if resp != 404{
 		log.Printf("[policy] error! Please check if policy requirements can be met at all!\n")
 	}
-	
+
 	elapsed := time.Since(start)
 	log.Debugf("[policy] PERFORMANCE: polling took %s", elapsed)
 	return nil
