@@ -44,7 +44,9 @@ Build, push and deploy your function:
 
 `$ faas-cli up -g [YOUR URL HERE] -f [PATH TO YOUR FUNCTION YML]`
 
-### helm chart
+If you want to update your policy-provider:
+
+`$ helm upgrade federation chart/of-federation/ --values chart/of-federation/values.yaml -n openfaas`
 
 See also: example of Kubernetes and AWS Lambda federated configuration in the sample [helm chart](chart/of-federation).
 
