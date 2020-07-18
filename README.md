@@ -16,7 +16,33 @@ With the increasing importance of and interest in the enforcement regulation or 
 The faas-policy provider can be deployed either locally or on an external server. For the local deployment, the following prerequisites have to be fulfilled:
 
 1. Installation of the [faas-cli](https://docs.openfaas.com/cli/install/)
+1. install kubectl (e.g. using arkade)
 1. e.g. [minikube](https://minikube.sigs.k8s.io/docs/start/)
+1. clone this repository
+
+As soon as the previous requirements are fulfilled, execute the following steps:
+
+Minikube: 
+
+1. start minicube `$ minicube start ` 
+1. connect to kubectl `$ kubectl get po -A` 
+1. open the minikube dashboard (e.g. for getting access to the policy provider's logging) `$ minicube dashboard`
+
+Navigate to the cloned faas-policy-provider:
+
+1. Configure /chart/of-federation/values.yml
+1. `$ kubectl apply -f https://raw.githubusercontent.com/openfaas/faas-netes/master/namespaces.yml`
+1. `$ kubectl --namespace=default get deployments -l "release=federation, app=openfaas-federation"`
+1. `$ helm install federation chart/of-federation/ --values chart/of-federation/values.yaml -n openfaas`
+
+Get the URL of the OpenFaaS UI and check if the instance is running:
+
+1. `$ minikube service -n openfaas gateway-external --url`
+1. `$ kubectl --namespace=openfaas get deployments`
+
+Build, push and deploy your function:
+
+`$ faas-cli up -g [YOUR URL HERE] -f [PATH TO YOUR FUNCTION YML]`
 
 ### helm chart
 
