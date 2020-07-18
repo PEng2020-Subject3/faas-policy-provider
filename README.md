@@ -1,19 +1,22 @@
-faas-policy-provider
------
+# faas-policy-provider
 
-faas-policy-provider is an implementation of the [faas-provider](https://github.com/openfaas/faas-provider) 
-which can be used enforce location and other policy constraints on function execution.  
-Similar to [faas-federation](https://github.com/openfaas-incubator/faas-federation) this provider is set in front of an
-actual provider.
+The faas-policy-provider is an implementation of the [faas-provider](https://github.com/openfaas/faas-provider) 
+which can be used enforce location and other policy constraints on function execution. Due to being forked from the [faas-federation repository](https://github.com/openfaas-incubator/faas-federation) this provider is located in front of an actual provider – analogous to the original faas-federation provider implementation.
 
-## Why do we need this?
+## Why do you need the faas-policy-provider?
 
+With the increasing importance of and interest in the enforcement regulation or different kinds of policies, we oberserved the lack of a tool that can sufficiently and transparently ensure the enforcement of such policies in OpenFaaS deployments. Our implementation aims to provide a basis for services that should be both based on OpenFaaS and be policy compliant – however these policy may be structered and motived.
 
 ## Getting started
 
 `faas-federation` can replace your provider in your existing OpenFaaS deployment.
 
-More coming soon.
+### Local Deployment
+
+The faas-policy provider can be deployed either locally or on an external server. For the local deployment, the following prerequisites have to be fulfilled:
+
+1. Installation of the [faas-cli](https://docs.openfaas.com/cli/install/)
+1. e.g. [minikube](https://minikube.sigs.k8s.io/docs/start/)
 
 ### helm chart
 
