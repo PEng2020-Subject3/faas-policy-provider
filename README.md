@@ -50,6 +50,10 @@ If you want to update your policy-provider:
 
 See also: example of Kubernetes and AWS Lambda federated configuration in the sample [helm chart](chart/of-federation).
 
+### Server Deployment 
+
+XXX
+
 ## Gateway routing
 
 To route to one gateway or another, simply set `com.openfaas.federation.gateway` to the name you want to pick.
@@ -67,9 +71,13 @@ All configuration is managed using environment variables
 | `providers`           | comma separated list of provider URLs i.e. `http://faas-netes:8080,http://faas-lambda:8080` | - |   yes    |
 | `default_provider`    | default provider URLs used when no deployment constraints are matched i.e. `http://faas-netes:8080` | - |   yes    |
 
+### Policy Configuration
+
+There are several arguments that can be constrained for policy specification, especially in context with the kubernetes provider. Aspects that can be constrained are for instance: region of deployment, hardware specifications, and many more.
+
 ## Acknowledgements
 
-Source forked from [faas-federation](https://github.com/openfaas-incubator/faas-federation).
+The project is forked from [faas-federation](https://github.com/openfaas-incubator/faas-federation).
 
 ## License
 
