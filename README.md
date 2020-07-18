@@ -1,7 +1,7 @@
 # faas-policy-provider
 
 The faas-policy-provider is an implementation of the [faas-provider](https://github.com/openfaas/faas-provider) 
-which can be used enforce location and other policy constraints on function execution. Due to being forked from the [faas-federation repository](https://github.com/openfaas-incubator/faas-federation) this provider is located in front of an actual provider – analogous to the original faas-federation provider implementation.
+which can be used enforce location and other policy constraints on function execution. Due to being forked from the [faas-federation](https://github.com/openfaas-incubator/faas-federation) repository this provider is located in front of an actual provider – analogous to the original faas-federation provider implementation.
 
 ## Why do you need the faas-policy-provider?
 
@@ -69,7 +69,7 @@ All configuration is managed using environment variables
 
 ## Acknowledgements
 
-Source forked from `faas-federation`.
+Source forked from [faas-federation](https://github.com/openfaas-incubator/faas-federation).
 
 ## License
 
