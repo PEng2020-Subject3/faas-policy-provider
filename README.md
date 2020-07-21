@@ -93,9 +93,46 @@ No deployed function will be hurt in this process.
 
 ### Policies
 
-There are several arguments that can be constrained for policy specification, 
-especially in context with the kubernetes provider. 
-Aspects that can be constrained are for instance: region of deployment, hardware specifications, and many more.
+The configuration is currently done via the `values.yaml` and defined on the deployment of the faas-policy-provider.
+
+Examples:
+
+```yaml
+policies:
+  - name: test
+    environment:
+      openfaas.policy.name: test
+  - name: gdpr
+    environment:
+      openfaas.policy.name: gdpr
+    constraints:
+        - "failure-domain.beta.kubernetes.io/region=us-east-1"
+        - "openfaas.policy/privacy-level=1"
+  - name: restricted
+    readonly_root_filesystem: true
+    environment:
+      openfaas.policy.name: restricted
+      db_host: usecase-db-restricted-postgresql
+      db_password: ngvc8dXsVP
+    constraints:
+      - "openfaas.policy/privacy-level=3"
+``` 
+
+There are several options of a function configuration that can be added with a policy specification, 
+especially in context with the kubernetes provider.  
+The following parts of a function configuration can be overridden or merged with those of a policy specification:
+- [annotations](https://docs.openfaas.com/reference/yaml/#function-annotations)
+- [environment variables](https://docs.openfaas.com/reference/yaml/#function-environmental-variables)
+- [labels](https://docs.openfaas.com/reference/yaml/#function-labels)
+- [constraints](https://docs.openfaas.com/reference/yaml/#function-constraints)
+- [secrets](https://docs.openfaas.com/reference/yaml/#function-secure-secrets)
+- [limits](https://docs.openfaas.com/reference/yaml/#function-memorycpu-limits)
+- [readonly filesystem](https://docs.openfaas.com/reference/yaml/#function-read-only-root-filesystem)
+
+For constraining the location for the deployment of a function, you have to utilize the [constraints](https://docs.openfaas.com/reference/yaml/#function-constraints)
+directive. Handling of these constraints may differ between the underlying orchestrators.  
+For Kubernetes this translates to the [NodeSelectors](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)
+which for example limit the available nodes for a policy based on labels, that mark a node as compliant to that policy.
 
 ### Faas Federation
 
