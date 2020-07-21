@@ -30,6 +30,9 @@ const (
 )
 
 // MakeProxyHandler creates a handler to invoke functions downstream
+// It is called on every /function/ GET call
+// If a policy query is given it resolves the policy function using the types/policy specified PolicyController interface
+// If the policy function can not be resolved but the policy is known to the system the policy function is deployed
 func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLookup, policyController types.PolicyController) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -45,13 +48,14 @@ func MakeProxyHandler(proxy http.HandlerFunc, providerLookup routing.ProviderLoo
 		functionName := strings.Split(r.URL.Path, "/")[2]
 		oldFunctionName := functionName
 
+		// back up body for redirect
 		log.Debugf("[policy] Read old body...")
 		if r.Body != nil {
 			oldBody := r.Body
 			log.Info(oldBody)
 		}
 
-		// Policy Management
+		// get policy
 		query := r.URL.Query()
 
 		policy, ok := query["policy"]
@@ -102,6 +106,9 @@ type FunctionLookup struct {
 	providerLookup routing.ProviderLookup
 }
 
+// Resovles a policy function using the function name and the requested policy
+// If the function policy combination is not yet deployed but the policy is known
+// the function policy combination is deployed using func policyDeploy and the request redirected there
 func policyProxy(r http.Request, functionName string, policy string,
 	providerLookup routing.ProviderLookup, policyController types.PolicyController) (string, error) {
 
@@ -137,13 +144,14 @@ func policyProxy(r http.Request, functionName string, policy string,
 			return "", depErr
 		}
 		policyController.AddPolicyFunction(functionName, *policyFunction)
-		//providerLookup.AddFunction(deployment)
 		policyFunctionName = deployment.Service
 
 	}
 	return policyFunctionName, nil
 }
 
+// the function policy combination is deployed
+// we poll and wait for the deployment in order to serve the redirect
 func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftypes.FunctionDeployment) error {
 	ctx := originalReq.Context()
 
