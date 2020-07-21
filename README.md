@@ -76,7 +76,7 @@ Deploy your function via the OpenFaas-UI portal or with `faas-cli deploy -g [YOU
 
 To update the configuration of the faas-policy-provider:
 
-`helm upgrade federation chart/of-federation/ --values chart/of-federation/values.yaml -n openfaas`
+`helm upgrade openfaas-policy chart/of-federation/ --values chart/of-federation/values.yaml -n openfaas`
 
 ### Drop-in replacement of an existing OpenFaas installation
 
@@ -126,7 +126,7 @@ The following parts of a function configuration can be overridden or merged with
 - [labels](https://docs.openfaas.com/reference/yaml/#function-labels)
 - [constraints](https://docs.openfaas.com/reference/yaml/#function-constraints)
 - [secrets](https://docs.openfaas.com/reference/yaml/#function-secure-secrets)
-- [limits](https://docs.openfaas.com/reference/yaml/#function-memorycpu-limits)
+- [limits and requests](https://docs.openfaas.com/reference/yaml/#function-memorycpu-limits)
 - [readonly filesystem](https://docs.openfaas.com/reference/yaml/#function-read-only-root-filesystem)
 
 For constraining the location for the deployment of a function, you have to utilize the [constraints](https://docs.openfaas.com/reference/yaml/#function-constraints)
