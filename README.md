@@ -16,7 +16,7 @@ however these policies may be structured and motivated.
 
 `faas-policy-provider` can replace your provider in your existing OpenFaaS deployment.
 
-OpenFaas can be deployed either locally or on an external server. Either way, the following 
+OpenFaaS can be deployed either locally or on an external server. Either way, the following 
 prerequisites have to be fulfilled:
 
 1. install [faas-cli](https://docs.openfaas.com/cli/install/)
@@ -44,7 +44,7 @@ kubectl get po -A
 minikube dashboard
 ```
 
-### Install OpenFaas with the faas-policy-provider
+### Install OpenFaaS with the faas-policy-provider
 
 Navigate to the cloned faas-policy-provider directory:
 
@@ -58,7 +58,7 @@ PASSWORD=$(head -c 12 /dev/urandom | shasum | cut -d' ' -f1)
 kubectl -n openfaas create secret generic basic-auth \
 --from-literal=basic-auth-user=admin \
 --from-literal=basic-auth-password=$PASSWORD
-# 4. install openfaas with the faas-policy-provider via helm. For a non-local installation add `--set serviceType=LoadBalancer`
+# 4. install OpenFaaS with the faas-policy-provider via helm. For a non-local installation add `--set serviceType=LoadBalancer`
 helm install openfaas-policy chart/of-federation/ --values chart/of-federation/values.yaml -n openfaas
 # 5. verify installation
 kubectl --namespace=openfaas get deployments -l "release=openfaas-policy, app=openfaas-federation"
@@ -72,18 +72,22 @@ Get the URL of the OpenFaaS UI and check if the instance is running:
 - With minikube: `minikube service -n openfaas gateway-external --url`
 - In an installation with a loadbalancer see the external ip in `kubectl --namespace=openfaas get svc`
 
-Deploy your function via the OpenFaas-UI portal or with `faas-cli deploy -g [YOUR GATEWAY URL HERE] -f [PATH TO YOUR FUNCTION YML]`
+Login and deploy your function via the OpenFaas-UI portal or with 
+```bash
+faas-cli login -g [YOUR GATEWAY URL HERE] -u admin -p $PASSWORD
+faas-cli deploy -g [YOUR GATEWAY URL HERE] -f [PATH TO YOUR FUNCTION YML]
+```
 
 To update the configuration of the faas-policy-provider:
 
 `helm upgrade openfaas-policy chart/of-federation/ --values chart/of-federation/values.yaml -n openfaas`
 
-### Drop-in replacement of an existing OpenFaas installation
+### Drop-in replacement of an existing OpenFaaS installation
 
-If you already have an openfaas installation managed by helm, you can upgrade the revision with the faas-policy-provider
+If you already have an OpenFaaS installation managed by helm, you can upgrade the revision with the faas-policy-provider
 configuration. Bed careful though, compare the set values and set them accordingly if necessary.
 
-If this won't work for any reason, deleting the OpenFaas installation 
+If this won't work for any reason, deleting the OpenFaaS installation 
 (with the name `openfaas` in this example: `helm uninstall openfaas --keep-history -n openfaas`)
 and installing the helm chart of faas-policy-provider as above should definitely work.
 
