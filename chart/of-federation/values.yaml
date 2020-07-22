@@ -60,7 +60,7 @@ faasfederation:
   providers: "http://faasnetes.openfaas:8080"
   default_provider: "http://faasnetes.openfaas:8080"
   policies:
-  - name: GDPR
+  - name: gdpr
     environment:
       openfaas.policy.name: gdpr
     constraints:
