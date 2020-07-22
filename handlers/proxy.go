@@ -106,7 +106,7 @@ type FunctionLookup struct {
 	providerLookup routing.ProviderLookup
 }
 
-// Resovles a policy function using the function name and the requested policy
+// Resolves a policy function using the function name and the requested policy
 // If the function policy combination is not yet deployed but the policy is known
 // the function policy combination is deployed using func policyDeploy and the request redirected there
 func policyProxy(r http.Request, functionName string, policy string,

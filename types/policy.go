@@ -2,7 +2,7 @@
 package types
 
 // Contains any policy cache related functionality
-// This functionality is used in handlers to implement the policy managment component
+// This functionality is used in handlers to implement the policy management component
 import (
 	"sync"
 
@@ -35,11 +35,11 @@ type PolicyFunction struct {
 // Defines an interface to access the policy cache
 type PolicyController interface {
 	// Resolve a requested functionName and policyName to the underlying service name
-	// The underlying servie name is the name as it is known to by the service provider (Kubernetes, etc ...)
+	// The underlying service name is the name as it is known to by the service provider (Kubernetes, etc ...)
 	// Return the position in the policy map, the internal service name and error
 	GetPolicyFunction(functionName string, policyName string) (int, string, error)
 
-	// The lookUpName describes the external functionName as it is accesed by the user over the URL
+	// The lookUpName describes the external functionName as it is accessed by the user over the URL
 	// The PolicyFunction struct captures the internal service name and under which policy the service was deployed
 	AddPolicyFunction(lookUpName string, function PolicyFunction) string
 	AddPolicy(policy Policy) string
@@ -49,7 +49,7 @@ type PolicyController interface {
 
 	// Defines how a policy conforming deployment spec is built from a FunctionDeployment type and a Policy type
 	// The FunctionDeployment deployment is the deployment spec under which the root version of the service was deployed
-	// The PolicyFunction function contains the inernal service name and the policy the deployment has to adhere to
+	// The PolicyFunction function contains the internal service name and the policy the deployment has to adhere to
 	// It can define how the Policy type takes precedence and overwrites the original FunctionDeployment
 	// The function has to at least set the internalName contained in function as the service name of the new deployment
 	BuildDeployment(function *PolicyFunction, deployment *fTypes.FunctionDeployment) (*fTypes.FunctionDeployment, *PolicyFunction)
