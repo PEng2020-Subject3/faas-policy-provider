@@ -202,8 +202,15 @@ func policyDeploy(originalReq *http.Request, baseURL *url.URL, deployment *ftype
 		}
 		log.Debugf("[policy] polling provider response status: %s", resp.Status)
 
+		if resp.StatusCode == http.StatusNotFound {
+			return errors.New("[policy] function replica not found. Maybe the constraints could not be fulfilled?")
+		}
+
 		// function is not yet known to underlying provider. Wait a bit
 		if resp.StatusCode != http.StatusOK {
+			if time.Now().Sub(start).Seconds() > 15 {
+				return errors.New("[policy] function still not found after 15 sec. Maybe the constraints could not be fulfilled or something is wrong?")
+			}
 			continue
 		}
 
